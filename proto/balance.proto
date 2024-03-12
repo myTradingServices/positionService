@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "/pb";
+
+package pb;
+
+service Balance {
+    rpc Balancer(stream requestBalancer) returns (stream responseBalancer) {}
+}
+
+message requestBalancer {
+    decimal add = 1;
+    decimal subtract = 2;
+
+    message decimal {
+        int64 value = 1;
+        int32 exp = 2; 
+    }
+}
+
+message responseBalancer {
+    bool ok = 1;
+}

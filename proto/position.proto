@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "/pb";
+
+import "google/protobuf/empty.proto";
+
+package pb;
+
+service Position {
+    rpc Positioner(stream requestPositioner) returns (google.protobuf.Empty) {}
+}
+
+message requestPositioner {
+    bool open = 1;
+    bool buy = 2;
+    string operationID = 3;
+    string userID = 4; 
+    string symbol = 5;
+}

@@ -1,0 +1,25 @@
+rpc/position.go:
+
+// recv, err := stream.Recv()
+// if err != nil { // recursive call?
+// 	log.Errorf("Failed to receive from stream: %v\nReconection attempt in 5 seconds", err)
+
+// 	time.Sleep(time.Second *5)
+
+// 	recv, err = stream.Recv()
+// 	if err != nil {
+// 		log.Errorf("Failed to receive from stream: %v\nReconection attempt in another 5 seconds", err)
+
+// 		time.Sleep(time.Second * 5)
+
+// 		recv, err = stream.Recv()
+// 		if err != nil {
+// 			log.Errorf("Failed to receive from stream: %v\nExiting stream", err)
+// 			return err
+// 		}
+
+// 		log.Infof("Successfully received from stream: %v", recv)
+// 	}
+
+// 	log.Info("Successfully received from stream: %v", recv)
+// }
