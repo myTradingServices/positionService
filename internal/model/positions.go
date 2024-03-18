@@ -10,5 +10,6 @@ type Position struct {
 	UserID      uuid.UUID
 	Symbol      string
 	OpenPrice   decimal.Decimal
-	CLosePrice  decimal.Decimal
+	ClosePrice  decimal.Decimal
+	Buy         bool
 }

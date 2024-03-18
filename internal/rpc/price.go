@@ -3,10 +3,12 @@ package rpc
 import (
 	"context"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/mmfshirokan/PriceService/proto/pb"
 	"github.com/mmfshirokan/positionService/internal/model"
+	"github.com/mmfshirokan/positionService/internal/service"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -14,14 +16,15 @@ import (
 
 type priceServer struct {
 	conn    *grpc.ClientConn
-	symbols map[string]chan model.Price
+	symbols service.MapInterface[string]
+	mut     sync.RWMutex
 }
 
 type Reciver interface {
 	Recive(ctx context.Context)
 }
 
-func NewPriceServer(connecion *grpc.ClientConn, symbolMap map[string]chan model.Price) Reciver {
+func NewPriceServer(connecion *grpc.ClientConn, symbolMap service.MapInterface[string]) Reciver {
 	return &priceServer{
 		conn:    connecion,
 		symbols: symbolMap,
@@ -49,10 +52,14 @@ func (p *priceServer) Recive(ctx context.Context) {
 			return
 		}
 
-		ch, ok := p.symbols[recv.Symbol]
+		ok := p.symbols.Contains(recv.Symbol)
+		var ch chan model.Price
+
 		if !ok {
-			ch = make(chan model.Price)
-			p.symbols[recv.Symbol] = ch
+			ch := make(chan model.Price)
+			p.symbols.Add(recv.Symbol, ch)
+		} else {
+			ch, _ = p.symbols.Get(recv.Symbol)
 		}
 
 		ch <- model.Price{

@@ -1,0 +1,7 @@
+# IDE ignored files
+/.idea
+/.vscode
+# Settings ignored files
+/.golangci.yml
+# Tmp ignored files
+/.tmpCode.txt

@@ -20,73 +20,19 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type RequestBalancer struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Add      *RequestBalancerDecimal `protobuf:"bytes,1,opt,name=add,proto3" json:"add,omitempty"`
-	Subtract *RequestBalancerDecimal `protobuf:"bytes,2,opt,name=subtract,proto3" json:"subtract,omitempty"`
-}
-
-func (x *RequestBalancer) Reset() {
-	*x = RequestBalancer{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_balance_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *RequestBalancer) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RequestBalancer) ProtoMessage() {}
-
-func (x *RequestBalancer) ProtoReflect() protoreflect.Message {
-	mi := &file_balance_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RequestBalancer.ProtoReflect.Descriptor instead.
-func (*RequestBalancer) Descriptor() ([]byte, []int) {
-	return file_balance_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *RequestBalancer) GetAdd() *RequestBalancerDecimal {
-	if x != nil {
-		return x.Add
-	}
-	return nil
-}
-
-func (x *RequestBalancer) GetSubtract() *RequestBalancerDecimal {
-	if x != nil {
-		return x.Subtract
-	}
-	return nil
-}
-
 type ResponseBalancer struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Ok bool `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Uuid string                   `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
+	Add  *ResponseBalancerDecimal `protobuf:"bytes,2,opt,name=add,proto3" json:"add,omitempty"`
 }
 
 func (x *ResponseBalancer) Reset() {
 	*x = ResponseBalancer{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_balance_proto_msgTypes[1]
+		mi := &file_balance_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -99,7 +45,7 @@ func (x *ResponseBalancer) String() string {
 func (*ResponseBalancer) ProtoMessage() {}
 
 func (x *ResponseBalancer) ProtoReflect() protoreflect.Message {
-	mi := &file_balance_proto_msgTypes[1]
+	mi := &file_balance_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,17 +58,71 @@ func (x *ResponseBalancer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResponseBalancer.ProtoReflect.Descriptor instead.
 func (*ResponseBalancer) Descriptor() ([]byte, []int) {
+	return file_balance_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ResponseBalancer) GetUuid() string {
+	if x != nil {
+		return x.Uuid
+	}
+	return ""
+}
+
+func (x *ResponseBalancer) GetAdd() *ResponseBalancerDecimal {
+	if x != nil {
+		return x.Add
+	}
+	return nil
+}
+
+type RequestBalancer struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Ok bool `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+}
+
+func (x *RequestBalancer) Reset() {
+	*x = RequestBalancer{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_balance_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RequestBalancer) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestBalancer) ProtoMessage() {}
+
+func (x *RequestBalancer) ProtoReflect() protoreflect.Message {
+	mi := &file_balance_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestBalancer.ProtoReflect.Descriptor instead.
+func (*RequestBalancer) Descriptor() ([]byte, []int) {
 	return file_balance_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ResponseBalancer) GetOk() bool {
+func (x *RequestBalancer) GetOk() bool {
 	if x != nil {
 		return x.Ok
 	}
 	return false
 }
 
-type RequestBalancerDecimal struct {
+type ResponseBalancerDecimal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -131,8 +131,8 @@ type RequestBalancerDecimal struct {
 	Exp   int32 `protobuf:"varint,2,opt,name=exp,proto3" json:"exp,omitempty"`
 }
 
-func (x *RequestBalancerDecimal) Reset() {
-	*x = RequestBalancerDecimal{}
+func (x *ResponseBalancerDecimal) Reset() {
+	*x = ResponseBalancerDecimal{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_balance_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -140,13 +140,13 @@ func (x *RequestBalancerDecimal) Reset() {
 	}
 }
 
-func (x *RequestBalancerDecimal) String() string {
+func (x *ResponseBalancerDecimal) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RequestBalancerDecimal) ProtoMessage() {}
+func (*ResponseBalancerDecimal) ProtoMessage() {}
 
-func (x *RequestBalancerDecimal) ProtoReflect() protoreflect.Message {
+func (x *ResponseBalancerDecimal) ProtoReflect() protoreflect.Message {
 	mi := &file_balance_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -158,19 +158,19 @@ func (x *RequestBalancerDecimal) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RequestBalancerDecimal.ProtoReflect.Descriptor instead.
-func (*RequestBalancerDecimal) Descriptor() ([]byte, []int) {
+// Deprecated: Use ResponseBalancerDecimal.ProtoReflect.Descriptor instead.
+func (*ResponseBalancerDecimal) Descriptor() ([]byte, []int) {
 	return file_balance_proto_rawDescGZIP(), []int{0, 0}
 }
 
-func (x *RequestBalancerDecimal) GetValue() int64 {
+func (x *ResponseBalancerDecimal) GetValue() int64 {
 	if x != nil {
 		return x.Value
 	}
 	return 0
 }
 
-func (x *RequestBalancerDecimal) GetExp() int32 {
+func (x *ResponseBalancerDecimal) GetExp() int32 {
 	if x != nil {
 		return x.Exp
 	}
@@ -181,25 +181,23 @@ var File_balance_proto protoreflect.FileDescriptor
 
 var file_balance_proto_rawDesc = []byte{
 	0x0a, 0x0d, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
-	0x02, 0x70, 0x62, 0x22, 0xac, 0x01, 0x0a, 0x0f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x42,
-	0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x12, 0x2d, 0x0a, 0x03, 0x61, 0x64, 0x64, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x70, 0x62, 0x2e, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x2e, 0x64, 0x65, 0x63, 0x69, 0x6d, 0x61,
-	0x6c, 0x52, 0x03, 0x61, 0x64, 0x64, 0x12, 0x37, 0x0a, 0x08, 0x73, 0x75, 0x62, 0x74, 0x72, 0x61,
-	0x63, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x70, 0x62, 0x2e, 0x72, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x2e, 0x64, 0x65,
-	0x63, 0x69, 0x6d, 0x61, 0x6c, 0x52, 0x08, 0x73, 0x75, 0x62, 0x74, 0x72, 0x61, 0x63, 0x74, 0x1a,
-	0x31, 0x0a, 0x07, 0x64, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61,
-	0x6c, 0x75, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
-	0x12, 0x10, 0x0a, 0x03, 0x65, 0x78, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x65,
-	0x78, 0x70, 0x22, 0x22, 0x0a, 0x10, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x61,
-	0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x12, 0x0e, 0x0a, 0x02, 0x6f, 0x6b, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x08, 0x52, 0x02, 0x6f, 0x6b, 0x32, 0x46, 0x0a, 0x07, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63,
-	0x65, 0x12, 0x3b, 0x0a, 0x08, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x12, 0x13, 0x2e,
-	0x70, 0x62, 0x2e, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63,
-	0x65, 0x72, 0x1a, 0x14, 0x2e, 0x70, 0x62, 0x2e, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x05,
-	0x5a, 0x03, 0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x02, 0x70, 0x62, 0x22, 0x89, 0x01, 0x0a, 0x10, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x75, 0x75, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x75, 0x75, 0x69, 0x64, 0x12, 0x2e, 0x0a, 0x03,
+	0x61, 0x64, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x70, 0x62, 0x2e, 0x72,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x2e,
+	0x64, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x52, 0x03, 0x61, 0x64, 0x64, 0x1a, 0x31, 0x0a, 0x07,
+	0x64, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x10, 0x0a,
+	0x03, 0x65, 0x78, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x65, 0x78, 0x70, 0x22,
+	0x21, 0x0a, 0x0f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63,
+	0x65, 0x72, 0x12, 0x0e, 0x0a, 0x02, 0x6f, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x02,
+	0x6f, 0x6b, 0x32, 0x46, 0x0a, 0x07, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x3b, 0x0a,
+	0x08, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x12, 0x13, 0x2e, 0x70, 0x62, 0x2e, 0x72,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x72, 0x1a, 0x14,
+	0x2e, 0x70, 0x62, 0x2e, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x61, 0x6c, 0x61,
+	0x6e, 0x63, 0x65, 0x72, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x05, 0x5a, 0x03, 0x2f, 0x70,
+	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -216,20 +214,19 @@ func file_balance_proto_rawDescGZIP() []byte {
 
 var file_balance_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_balance_proto_goTypes = []interface{}{
-	(*RequestBalancer)(nil),        // 0: pb.requestBalancer
-	(*ResponseBalancer)(nil),       // 1: pb.responseBalancer
-	(*RequestBalancerDecimal)(nil), // 2: pb.requestBalancer.decimal
+	(*ResponseBalancer)(nil),        // 0: pb.responseBalancer
+	(*RequestBalancer)(nil),         // 1: pb.requestBalancer
+	(*ResponseBalancerDecimal)(nil), // 2: pb.responseBalancer.decimal
 }
 var file_balance_proto_depIdxs = []int32{
-	2, // 0: pb.requestBalancer.add:type_name -> pb.requestBalancer.decimal
-	2, // 1: pb.requestBalancer.subtract:type_name -> pb.requestBalancer.decimal
-	0, // 2: pb.Balance.Balancer:input_type -> pb.requestBalancer
-	1, // 3: pb.Balance.Balancer:output_type -> pb.responseBalancer
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2, // 0: pb.responseBalancer.add:type_name -> pb.responseBalancer.decimal
+	1, // 1: pb.Balance.Balancer:input_type -> pb.requestBalancer
+	0, // 2: pb.Balance.Balancer:output_type -> pb.responseBalancer
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_balance_proto_init() }
@@ -239,18 +236,6 @@ func file_balance_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_balance_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RequestBalancer); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_balance_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ResponseBalancer); i {
 			case 0:
 				return &v.state
@@ -262,8 +247,20 @@ func file_balance_proto_init() {
 				return nil
 			}
 		}
+		file_balance_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RequestBalancer); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 		file_balance_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RequestBalancerDecimal); i {
+			switch v := v.(*ResponseBalancerDecimal); i {
 			case 0:
 				return &v.state
 			case 1:

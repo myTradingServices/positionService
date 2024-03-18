@@ -3,7 +3,6 @@ package rpc
 import (
 	"context"
 	"io"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,11 +13,9 @@ import (
 )
 
 type positionServer struct {
-	symbols      map[string]chan model.Price
-	positionOpen map[string]chan bool
-
-	mut  sync.RWMutex
-	serv service.Interface
+	priceDistribution service.MapInterface[model.SymbOperDTO]
+	balance           chan<- model.Position
+	serv              service.Interface
 
 	pb.UnimplementedPositionServer
 }
@@ -27,15 +24,21 @@ type Positioner interface {
 	Positioner(pb.Position_PositionerServer) error
 }
 
-func NewPositionServer(symb map[string]chan model.Price, service service.Interface) pb.PositionServer {
+func NewPositionServer(
+	priceDistribution service.MapInterface[model.SymbOperDTO],
+	balance chan<- model.Position,
+	serv service.Interface,
+) pb.PositionServer {
 	return &positionServer{
-		symbols: symb,
-		serv:    service,
+		priceDistribution: priceDistribution,
+		balance:           balance,
+		serv:              serv,
 	}
 }
 
 func (s *positionServer) Positioner(stream pb.Position_PositionerServer) error {
 	ctx := stream.Context()
+	positionOpen := make(map[string]chan bool)
 
 	for {
 		recv, err := stream.Recv()
@@ -48,8 +51,17 @@ func (s *positionServer) Positioner(stream pb.Position_PositionerServer) error {
 			return err
 		}
 
-		openCh, ok := s.positionOpen[recv.OperationID]
+		ok := s.priceDistribution.Contains(model.SymbOperDTO{Symbol: recv.Symbol, Operation: recv.OperationID})
+
 		if !ok {
+			positionOpen[recv.OperationID] = make(chan bool)
+			priceChan := make(chan model.Price)
+
+			s.priceDistribution.Add(model.SymbOperDTO{
+				Symbol:    recv.Symbol,
+				Operation: recv.OperationID,
+			}, priceChan)
+
 			tmpOperUUID, err := uuid.Parse(recv.OperationID)
 			if err != nil {
 				log.Error("failed to parse operation UUID, wrong rpc data", err)
@@ -68,34 +80,19 @@ func (s *positionServer) Positioner(stream pb.Position_PositionerServer) error {
 				Symbol:      recv.Symbol,
 			}
 
-			go func(ctxx context.Context, tmpMod model.Position, symb string, open bool, buy bool) { // TODO add parralel symbo receiving
-				reconectionCounter := 0
-				for {
-					s.mut.RLock()
-					_, ok := s.symbols[symb]
-					s.mut.RUnlock()
-
-					if reconectionCounter > 14 {
-						log.Error("ERROR failed to find symbol exiting gorutine")
-						return
-					}
-
-					if !ok {
-						log.Error("error: symbol not found, atempting to refind in 1 second")
-						reconectionCounter++
-						time.Sleep(time.Second)
-						continue
-					}
-
-					break
+			go func(ctxx context.Context, openCh chan bool, tmpMod model.Position, open bool, buy bool) { // TODO add parralel symbo receiving
+				priceChan, err := s.priceDistribution.Get(model.SymbOperDTO{
+					Symbol:    tmpMod.Symbol,
+					Operation: tmpMod.OperationID.String(),
+				})
+				if err != nil {
+					log.Error("failed to get price channel, wrong rpc data", err)
+					return
 				}
-
-				s.mut.RLock()
-				priceChan := s.symbols[symb]
-				s.mut.RUnlock()
 
 				startTime := time.Now()
 				tmpPrice := <-priceChan
+
 				for {
 					if startTime.Truncate(time.Second).Compare(tmpPrice.Date.Truncate(time.Second)) != 0 {
 						tmpPrice = <-priceChan
@@ -122,6 +119,7 @@ func (s *positionServer) Positioner(stream pb.Position_PositionerServer) error {
 				}
 
 				tmpPrice = <-priceChan
+
 				for {
 					if closeTime.Truncate(time.Second).Compare(tmpPrice.Date.Truncate(time.Second)) != 0 {
 						tmpPrice = <-priceChan
@@ -129,25 +127,44 @@ func (s *positionServer) Positioner(stream pb.Position_PositionerServer) error {
 					}
 
 					if buy {
-						tmpMod.CLosePrice = tmpPrice.Bid
+						tmpMod.ClosePrice = tmpPrice.Bid
 					} else {
-						tmpMod.CLosePrice = tmpPrice.Ask
+						tmpMod.ClosePrice = tmpPrice.Ask
 					}
 
 					break
 				}
 
-				s.mut.Lock()
 				s.serv.Add(ctxx, tmpMod)
-				s.mut.Unlock()
-				// TODO add balance relation
-			}(ctx, mod, recv.Symbol, recv.Open, recv.Buy)
+				s.balance <- tmpMod
+			}(ctx, positionOpen[recv.OperationID], mod, recv.Open, recv.Buy)
 
 			continue
 		}
 
-		openCh <- recv.Open
+		positionOpen[recv.OperationID] <- recv.Open
 	}
 
 	return nil
 }
+
+// reconectionCounter := 0
+// for {
+// 	s.mut.RLock()
+// 	_, ok := s.priceDistribution[recv.Symbol]
+// 	s.mut.RUnlock()
+
+// 	if reconectionCounter > 14 {
+// 		log.Error("ERROR failed to find symbol exiting gorutine")
+// 		return
+// 	}
+
+// 	if !ok {
+// 		log.Error("error: symbol not found, atempting to refind in 1 second")
+// 		reconectionCounter++
+// 		time.Sleep(time.Second)
+// 		continue
+// 	}
+
+// 	break
+// }

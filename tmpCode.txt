@@ -1,4 +1,13 @@
-rpc/position.go:
+TODO!:
+1. Write additional repo for maps -- DONE
+2. Change 'for' cycle to gorutins in mappingServer layer -- DONE ?
+3. Add config for configs
+4. Chek everything with golangci-linter 
+5. Finish main 
+6. Write test's 
+7. Add logging for each price change for each position  
+
+rpc/position.go restart code:
 
 // recv, err := stream.Recv()
 // if err != nil { // recursive call?

@@ -8,9 +8,9 @@ service Balance {
     rpc Balancer(stream requestBalancer) returns (stream responseBalancer) {}
 }
 
-message requestBalancer {
-    decimal add = 1;
-    decimal subtract = 2;
+message responseBalancer {
+    string uuid = 1;
+    decimal add = 2; 
 
     message decimal {
         int64 value = 1;
@@ -18,6 +18,6 @@ message requestBalancer {
     }
 }
 
-message responseBalancer {
+message requestBalancer{
     bool ok = 1;
 }
