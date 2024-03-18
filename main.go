@@ -29,11 +29,6 @@ func main() {
 		log.Panic("pgxPool fatal error:", err)
 	}
 
-	pgxConn, err := pgxPool.Acquire(ctx)
-	if err != nil {
-		log.Panic("pgxPool fatal conection error:", err)
-	}
-
 	rpcOptions := grpc.WithTransportCredentials(insecure.NewCredentials())
 	rpcConn, err := grpc.Dial(conf.PpstgresURI, rpcOptions)
 	if err != nil {
@@ -49,7 +44,7 @@ func main() {
 	symblPriceServ := repository.NewStringPrice(symbPriceMap)
 	operPriceServ := repository.NewStringPrice(operPriceMap)
 
-	dbRepo := repository.NewPostgresRepository(pgxConn)
+	dbRepo := repository.NewPostgresRepository(pgxPool)
 	serv := service.NewPositionService(dbRepo)
 
 	balanceChan := make(chan model.Position)

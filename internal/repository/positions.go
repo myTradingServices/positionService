@@ -9,7 +9,7 @@ import (
 )
 
 type postgres struct {
-	conn *pgxpool.Conn
+	conn *pgxpool.Pool
 }
 
 type DbInterface interface {
@@ -18,7 +18,7 @@ type DbInterface interface {
 	Get(ctx context.Context, id uuid.UUID) ([]model.Position, error)
 }
 
-func NewPostgresRepository(conn *pgxpool.Conn) DbInterface {
+func NewPostgresRepository(conn *pgxpool.Pool) DbInterface {
 	return &postgres{
 		conn: conn,
 	}
