@@ -1,22 +1,56 @@
 package repository
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mmfshirokan/positionService/internal/model"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
+
+// Note: using decimal.New(_, 1) results in assert error
+// beter use asser for each field + decimal.Compare
 
 var (
 	conn DbInterface
+
+	input1 = model.Position{
+		OperationID: uuid.New(),
+		UserID:      uuid.New(),
+		Symbol:      "symb1",
+		OpenPrice:   decimal.New(19, 0),
+		ClosePrice:  decimal.New(130, 0),
+		Buy:         true,
+	}
+
+	input2 = model.Position{
+		OperationID: uuid.New(),
+		UserID:      uuid.New(),
+		Symbol:      "symb2",
+		OpenPrice:   decimal.New(123, 0),
+		ClosePrice:  decimal.New(11, 0),
+		Buy:         false,
+	}
+
+	input3 = model.Position{
+		OperationID: uuid.New(),
+		UserID:      input1.UserID,
+		Symbol:      "symb1",
+		OpenPrice:   decimal.New(190, 0),
+		ClosePrice:  decimal.New(183, 0),
+		Buy:         true,
+	}
 )
 
 func TestMain(m *testing.M) {
@@ -68,8 +102,6 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
 
-	///// ///// ///// ///// ///// ///// ///// ///// ///// ///// /////
-
 	commandArr := []string{
 		"-url=jdbc:postgresql://" + postgresHostAndPort + "/chart",
 		"-user=user",
@@ -80,17 +112,26 @@ func TestMain(m *testing.M) {
 		"migrate",
 	}
 	cmd := exec.Command("flyway", commandArr[:]...)
-	var outb, errb bytes.Buffer
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
 
-	err = cmd.Run()
+	msg, err := cmd.Output()
 	if err != nil {
-		log.Error(fmt.Printf("error: %s", err))
+		log.Errorf("Migtation error: %s", err) // Note: Error output is poor
 	}
+
+	str := string(msg)
+	log.Info(
+		strings.Replace(
+			strings.Replace(str, "\n\n", " ", -1), "\n", " ", -1,
+		),
+	)
 
 	pool.MaxWait = 120 * time.Second
 	conn = NewPostgresRepository(dbpool)
+
+	mapStrChan := make(map[string]chan model.Price)
+	mapStrMapStrChan := make(map[string]map[string]chan model.Price)
+	connMap = NewStringPrice(mapStrChan)
+	connMapMap = NewSymbOperMap(mapStrMapStrChan)
 
 	code := m.Run()
 
@@ -99,4 +140,126 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
+}
+
+func TestPostgresAdd(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+	defer cancel()
+
+	testTable := []struct {
+		name     string
+		input    model.Position
+		hasError bool
+	}{
+		{
+			name:     "standart input-1",
+			input:    input1,
+			hasError: false,
+		},
+		{
+			name:     "standart input-2",
+			input:    input2,
+			hasError: false,
+		},
+		{
+			name:     "standart input-3",
+			input:    input3,
+			hasError: false,
+		},
+	}
+
+	for _, test := range testTable {
+		err := conn.Add(ctx, test.input)
+
+		if test.hasError {
+			assert.Error(t, err, test.name)
+		} else {
+			assert.Nil(t, err, test.name)
+		}
+	}
+
+	log.Info("TestPostgresAdd finished!")
+}
+
+func TestPostgresGet(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+	defer cancel()
+
+	testTable := []struct {
+		name     string
+		input    uuid.UUID
+		expected []model.Position
+		hasError bool
+	}{
+		{
+			name:  "standart input-1&3",
+			input: input1.UserID,
+			expected: []model.Position{
+				input1,
+				input3,
+			},
+			hasError: false,
+		},
+		{
+			name:     "standart input-2",
+			input:    input2.UserID,
+			expected: []model.Position{input2},
+			hasError: false,
+		},
+	}
+
+	for _, test := range testTable {
+		actual, err := conn.Get(ctx, test.input)
+
+		if test.hasError {
+			assert.Error(t, err, test.name)
+		} else {
+			if ok := assert.Nil(t, err, test.name); !ok {
+				continue
+			}
+
+			assert.Equal(t, test.expected, actual, test.name)
+		}
+	}
+
+	log.Info("TestPostgresGet finished!")
+}
+
+func TestPostgresDelete(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+	defer cancel()
+
+	testTable := []struct {
+		name     string
+		input    uuid.UUID
+		hasError bool
+	}{
+		{
+			name:     "standart input-1",
+			input:    input1.OperationID,
+			hasError: false,
+		},
+		{
+			name:     "standart input-2",
+			input:    input2.OperationID,
+			hasError: false,
+		},
+		{
+			name:     "standart input-3",
+			input:    input2.OperationID,
+			hasError: false,
+		},
+	}
+
+	for _, test := range testTable {
+		err := conn.Deleete(ctx, test.input)
+
+		if test.hasError {
+			assert.Error(t, err, test.name)
+		} else {
+			assert.Nil(t, err, test.name)
+		}
+	}
+
+	log.Info("TestPostgresDelete finished!")
 }

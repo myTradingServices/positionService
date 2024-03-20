@@ -60,14 +60,14 @@ func (s *symbPrice) Get(key string) (chan model.Price, error) {
 }
 func (s *symbPrice) Delete(key string) error {
 	s.mut.RLock()
-	val, ok := s.symbPriceMap[key]
-	s.mut.Unlock()
+	_, ok := s.symbPriceMap[key]
+	s.mut.RUnlock()
 
 	if !ok {
 		return ErrDeleteElementThatNotExist
 	}
 	s.mut.Lock()
-	close(val)
+	//close(val)
 	delete(s.symbPriceMap, key)
 	s.mut.Unlock()
 
@@ -84,7 +84,7 @@ func (s *symbPrice) Contains(key string) bool {
 
 func (s *symbPrice) GetKeys() (keyArr []string) {
 	s.mut.RLock()
-	for symb, _ := range s.symbPriceMap {
+	for symb := range s.symbPriceMap {
 		keyArr = append(keyArr, symb)
 	}
 	s.mut.RUnlock()
@@ -104,7 +104,22 @@ func NewSymbOperMap(sopMap map[string]map[string]chan model.Price) MapInterface[
 
 func (s *symbOperPrice) Add(key model.SymbOperDTO, val chan model.Price) error {
 	s.mut.RLock()
-	_, ok := s.symbOperMap[key.Symbol][key.Operation]
+	_, ok := s.symbOperMap[key.Symbol]
+	s.mut.RUnlock()
+
+	if !ok {
+		underlying := make(map[string]chan model.Price)
+		underlying[key.Operation] = val
+
+		s.mut.Lock()
+		s.symbOperMap[key.Symbol] = underlying
+		s.mut.Unlock()
+
+		return nil
+	}
+
+	s.mut.RLock()
+	_, ok = s.symbOperMap[key.Symbol][key.Operation]
 	s.mut.RUnlock()
 
 	if ok {
@@ -112,7 +127,8 @@ func (s *symbOperPrice) Add(key model.SymbOperDTO, val chan model.Price) error {
 	}
 
 	s.mut.Lock()
-	s.symbOperMap[key.Symbol][key.Operation] = val
+	underlying := s.symbOperMap[key.Symbol]
+	underlying[key.Operation] = val
 	s.mut.Unlock()
 
 	return nil
@@ -132,15 +148,15 @@ func (s *symbOperPrice) Get(key model.SymbOperDTO) (chan model.Price, error) {
 
 func (s *symbOperPrice) Delete(key model.SymbOperDTO) error {
 	s.mut.RLock()
-	val, ok := s.symbOperMap[key.Symbol][key.Operation]
-	s.mut.Unlock()
+	_, ok := s.symbOperMap[key.Symbol][key.Operation]
+	s.mut.RUnlock()
 
 	if !ok {
 		return ErrDeleteElementThatNotExist
 	}
 
 	s.mut.Lock()
-	close(val)
+	// close(val)
 	delete(s.symbOperMap[key.Symbol], key.Operation)
 	s.mut.Unlock()
 
