@@ -12,13 +12,14 @@ type DbInterface struct {
 	repo repository.DbInterface
 }
 
-type Interface interface {
+type DBInterface interface {
 	Add(ctx context.Context, position model.Position) error
 	Deleete(ctx context.Context, id uuid.UUID) error
 	Get(ctx context.Context, id uuid.UUID) ([]model.Position, error)
+	Update(ctx context.Context, position model.Position) error
 }
 
-func NewPositionService(repo repository.DbInterface) Interface {
+func NewPositionService(repo repository.DbInterface) DBInterface {
 	return &DbInterface{
 		repo: repo,
 	}
@@ -34,4 +35,8 @@ func (r *DbInterface) Deleete(ctx context.Context, id uuid.UUID) error {
 
 func (r *DbInterface) Get(ctx context.Context, id uuid.UUID) ([]model.Position, error) {
 	return r.repo.Get(ctx, id)
+}
+
+func (r *DbInterface) Update(ctx context.Context, position model.Position) error {
+	return r.repo.Update(ctx, position)
 }

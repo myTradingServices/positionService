@@ -12,4 +12,5 @@ type Position struct {
 	OpenPrice   decimal.Decimal
 	ClosePrice  decimal.Decimal
 	Buy         bool
+	Open        bool
 }
