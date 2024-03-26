@@ -16,7 +16,6 @@ type DbInterface interface {
 	Add(ctx context.Context, position model.Position) error
 	Deleete(ctx context.Context, id uuid.UUID) error
 	Get(ctx context.Context, id uuid.UUID) ([]model.Position, error)
-	Update(ctx context.Context, position model.Position) error
 }
 
 func NewPostgresRepository(conn *pgxpool.Pool) DbInterface {
@@ -26,13 +25,13 @@ func NewPostgresRepository(conn *pgxpool.Pool) DbInterface {
 }
 
 func (p *postgres) Add(ctx context.Context, position model.Position) error {
-	_, err := p.dbpool.Exec(ctx, "INSERT INTO trading.positions (operation_id, user_id, symbol, open_price, close_price, buy, open) VALUES ($1, $2, $3, $4, $5, $6)",
+	_, err := p.dbpool.Exec(ctx, "INSERT INTO trading.positions (operation_id, user_id, symbol, open_price, close_price, buy) VALUES ($1, $2, $3, $4, $5, $6)",
 		position.OperationID,
 		position.UserID,
 		position.Symbol,
 		position.OpenPrice,
+		position.ClosePrice,
 		position.Buy,
-		position.Open,
 	)
 	return err
 }
@@ -43,7 +42,7 @@ func (p *postgres) Deleete(ctx context.Context, operID uuid.UUID) error {
 }
 
 func (p *postgres) Get(ctx context.Context, userID uuid.UUID) (res []model.Position, err error) {
-	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, user_id, symbol, open_price, close_price, buy, open) FROM trading.positions WHERE user_id = $1", userID)
+	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, user_id, symbol, open_price, close_price, buy) FROM trading.positions WHERE user_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +60,4 @@ func (p *postgres) Get(ctx context.Context, userID uuid.UUID) (res []model.Posit
 	}
 
 	return res, nil
-}
-
-func (p *postgres) Update(ctx context.Context, pos model.Position) error {
-	_, err := p.dbpool.Exec(ctx, "UPDATE trading.positions SET close_price = $1, open = $2 WHERE operation_id = $3", pos.ClosePrice, pos.Open, pos.OperationID)
-	return err
 }

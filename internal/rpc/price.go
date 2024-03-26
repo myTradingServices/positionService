@@ -3,41 +3,43 @@ package rpc
 import (
 	"context"
 	"io"
+	"sync"
+	"time"
 
 	"github.com/mmfshirokan/PriceService/proto/pb"
 	"github.com/mmfshirokan/positionService/internal/model"
+	"github.com/mmfshirokan/positionService/internal/service"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
 type priceServer struct {
-	client   pb.ConsumerClient
-	chSender chan<- chan model.Price
+	conn    *grpc.ClientConn
+	symbols service.MapInterface[string]
+	mut     sync.RWMutex
 }
 
 type Reciver interface {
-	ReciveStream(ctx context.Context)
-	ReciveLast(ctx context.Context, symb string) (model.Price, error)
+	Recive(ctx context.Context)
 }
 
-func NewPriceServer(connecion *grpc.ClientConn, chSender chan<- chan model.Price) Reciver {
-	client := pb.NewConsumerClient(connecion)
+func NewPriceServer(connecion *grpc.ClientConn, symbolMap service.MapInterface[string]) Reciver {
 	return &priceServer{
-		client:   client,
-		chSender: chSender,
+		conn:    connecion,
+		symbols: symbolMap,
 	}
 }
 
-func (p *priceServer) ReciveStream(ctx context.Context) {
-	stream, err := p.client.DataStream(ctx, &pb.RequestDataStream{Start: true})
+func (p *priceServer) Recive(ctx context.Context) {
+	consumer := pb.NewConsumerClient(p.conn)
+	stream, err := consumer.DataStream(ctx, &pb.RequestDataStream{Start: true})
 	if err != nil {
 		log.Errorf("Error in DataStream: %v", err)
 		return
 	}
-	defer stream.CloseSend()
 
-	symbChanMap := make(map[string]chan model.Price)
+	defer stream.CloseSend()
 
 	for {
 		recv, err := stream.Recv()
@@ -50,40 +52,21 @@ func (p *priceServer) ReciveStream(ctx context.Context) {
 			return
 		}
 
-		if _, ok := symbChanMap[recv.Symbol]; !ok {
-			symbChanMap[recv.Symbol] = make(chan model.Price)
-			symbChanMap[recv.Symbol] <- model.Price{
-				Date:   recv.Date.AsTime(),
-				Bid:    decimal.New(recv.Bid.Value, recv.Bid.Exp),
-				Ask:    decimal.New(recv.Ask.Value, recv.Ask.Exp),
-				Symbol: recv.Symbol,
-			}
+		ok := p.symbols.Contains(recv.Symbol)
+		var ch chan model.Price
+
+		if !ok {
+			ch := make(chan model.Price)
+			p.symbols.Add(recv.Symbol, ch)
 		} else {
-			symbChanMap[recv.Symbol] <- model.Price{
-				Date:   recv.Date.AsTime(),
-				Bid:    decimal.New(recv.Bid.Value, recv.Bid.Exp),
-				Ask:    decimal.New(recv.Ask.Value, recv.Ask.Exp),
-				Symbol: recv.Symbol,
-			}
+			ch, _ = p.symbols.Get(recv.Symbol)
 		}
 
-		p.chSender <- symbChanMap[recv.Symbol]
+		ch <- model.Price{
+			Date:   time.Now(),
+			Bid:    decimal.New(recv.Bid.Value, recv.Bid.Exp),
+			Ask:    decimal.New(recv.Ask.Value, recv.Ask.Exp),
+			Symbol: recv.Symbol,
+		}
 	}
-}
-
-func (p *priceServer) ReciveLast(ctx context.Context, symb string) (model.Price, error) {
-	recv, err := p.client.GetLastPrice(ctx, &pb.RequestGetLastPrice{
-		Symbol: symb,
-	})
-	if err != nil {
-		log.Error("Reciving error: ", err)
-		return model.Price{}, err
-	}
-
-	return model.Price{
-		Date:   recv.Data.Date.AsTime(),
-		Bid:    decimal.New(recv.Data.Bid.Value, recv.Data.Bid.Exp),
-		Ask:    decimal.New(recv.Data.Ask.Value, recv.Data.Ask.Exp),
-		Symbol: recv.Data.Symbol,
-	}, nil
 }

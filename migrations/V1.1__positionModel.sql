@@ -4,6 +4,5 @@ CREATE TABLE trading.positions (
     symbol varchar(10),
     open_price decimal,
     close_price decimal,
-    buy boolean,
-    open boolean
+    buy boolean
 );
