@@ -23,7 +23,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PositionClient interface {
-	Positioner(ctx context.Context, opts ...grpc.CallOption) (Position_PositionerClient, error)
+	OpenPosition(ctx context.Context, in *RequestOpenPosition, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ClosePosition(ctx context.Context, in *RequestClosePosition, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type positionClient struct {
@@ -34,45 +35,30 @@ func NewPositionClient(cc grpc.ClientConnInterface) PositionClient {
 	return &positionClient{cc}
 }
 
-func (c *positionClient) Positioner(ctx context.Context, opts ...grpc.CallOption) (Position_PositionerClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Position_ServiceDesc.Streams[0], "/pb.Position/Positioner", opts...)
+func (c *positionClient) OpenPosition(ctx context.Context, in *RequestOpenPosition, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/pb.Position/OpenPosition", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &positionPositionerClient{stream}
-	return x, nil
+	return out, nil
 }
 
-type Position_PositionerClient interface {
-	Send(*RequestPositioner) error
-	CloseAndRecv() (*emptypb.Empty, error)
-	grpc.ClientStream
-}
-
-type positionPositionerClient struct {
-	grpc.ClientStream
-}
-
-func (x *positionPositionerClient) Send(m *RequestPositioner) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *positionPositionerClient) CloseAndRecv() (*emptypb.Empty, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
+func (c *positionClient) ClosePosition(ctx context.Context, in *RequestClosePosition, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/pb.Position/ClosePosition", in, out, opts...)
+	if err != nil {
 		return nil, err
 	}
-	m := new(emptypb.Empty)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 // PositionServer is the server API for Position service.
 // All implementations must embed UnimplementedPositionServer
 // for forward compatibility
 type PositionServer interface {
-	Positioner(Position_PositionerServer) error
+	OpenPosition(context.Context, *RequestOpenPosition) (*emptypb.Empty, error)
+	ClosePosition(context.Context, *RequestClosePosition) (*emptypb.Empty, error)
 	mustEmbedUnimplementedPositionServer()
 }
 
@@ -80,8 +66,11 @@ type PositionServer interface {
 type UnimplementedPositionServer struct {
 }
 
-func (UnimplementedPositionServer) Positioner(Position_PositionerServer) error {
-	return status.Errorf(codes.Unimplemented, "method Positioner not implemented")
+func (UnimplementedPositionServer) OpenPosition(context.Context, *RequestOpenPosition) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OpenPosition not implemented")
+}
+func (UnimplementedPositionServer) ClosePosition(context.Context, *RequestClosePosition) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClosePosition not implemented")
 }
 func (UnimplementedPositionServer) mustEmbedUnimplementedPositionServer() {}
 
@@ -96,30 +85,40 @@ func RegisterPositionServer(s grpc.ServiceRegistrar, srv PositionServer) {
 	s.RegisterService(&Position_ServiceDesc, srv)
 }
 
-func _Position_Positioner_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(PositionServer).Positioner(&positionPositionerServer{stream})
-}
-
-type Position_PositionerServer interface {
-	SendAndClose(*emptypb.Empty) error
-	Recv() (*RequestPositioner, error)
-	grpc.ServerStream
-}
-
-type positionPositionerServer struct {
-	grpc.ServerStream
-}
-
-func (x *positionPositionerServer) SendAndClose(m *emptypb.Empty) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *positionPositionerServer) Recv() (*RequestPositioner, error) {
-	m := new(RequestPositioner)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _Position_OpenPosition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestOpenPosition)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(PositionServer).OpenPosition(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Position/OpenPosition",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PositionServer).OpenPosition(ctx, req.(*RequestOpenPosition))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Position_ClosePosition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestClosePosition)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PositionServer).ClosePosition(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Position/ClosePosition",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PositionServer).ClosePosition(ctx, req.(*RequestClosePosition))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // Position_ServiceDesc is the grpc.ServiceDesc for Position service.
@@ -128,13 +127,16 @@ func (x *positionPositionerServer) Recv() (*RequestPositioner, error) {
 var Position_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "pb.Position",
 	HandlerType: (*PositionServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
+	Methods: []grpc.MethodDesc{
 		{
-			StreamName:    "Positioner",
-			Handler:       _Position_Positioner_Handler,
-			ClientStreams: true,
+			MethodName: "OpenPosition",
+			Handler:    _Position_OpenPosition_Handler,
+		},
+		{
+			MethodName: "ClosePosition",
+			Handler:    _Position_ClosePosition_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "position.proto",
 }

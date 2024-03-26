@@ -20,18 +20,19 @@ import (
 )
 
 // Note: using decimal.New(_, 1) results in assert error
-// beter use asser for each field + decimal.Compare
+// beter use assert for each field + decimal.Compare
 
+// TODO: remove hasError filed from testTables where it's unnesasary
 var (
-	conn DbInterface
+	conn DBInterface
 
 	input1 = model.Position{
 		OperationID: uuid.New(),
 		UserID:      uuid.New(),
 		Symbol:      "symb1",
 		OpenPrice:   decimal.New(19, 0),
-		ClosePrice:  decimal.New(130, 0),
 		Buy:         true,
+		Open:        true,
 	}
 
 	input2 = model.Position{
@@ -39,8 +40,8 @@ var (
 		UserID:      uuid.New(),
 		Symbol:      "symb2",
 		OpenPrice:   decimal.New(123, 0),
-		ClosePrice:  decimal.New(11, 0),
 		Buy:         false,
+		Open:        true,
 	}
 
 	input3 = model.Position{
@@ -48,9 +49,13 @@ var (
 		UserID:      input1.UserID,
 		Symbol:      "symb1",
 		OpenPrice:   decimal.New(190, 0),
-		ClosePrice:  decimal.New(183, 0),
 		Buy:         true,
+		Open:        true,
 	}
+
+	closePrice1 = decimal.New(130, 0)
+	closePrice2 = decimal.New(11, 0)
+	closePrice3 = decimal.New(183, 0)
 )
 
 func TestMain(m *testing.M) {
@@ -181,6 +186,79 @@ func TestPostgresAdd(t *testing.T) {
 	log.Info("TestPostgresAdd finished!")
 }
 
+func TestGetAllOpened(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+	defer cancel()
+
+	opened, err := conn.GetAllOpend(ctx)
+	assert.Nil(t, err, "GetAllOpened error is not nil")
+	assert.ElementsMatch(t, opened, []model.Position{
+		{
+			OperationID: input1.OperationID,
+			Symbol:      input1.Symbol,
+			Buy:         input1.Buy,
+			OpenPrice:   input1.OpenPrice,
+		},
+		{
+			OperationID: input2.OperationID,
+			Symbol:      input2.Symbol,
+			Buy:         input2.Buy,
+			OpenPrice:   input2.OpenPrice,
+		},
+		{
+			OperationID: input3.OperationID,
+			Symbol:      input3.Symbol,
+			Buy:         input3.Buy,
+			OpenPrice:   input3.OpenPrice,
+		},
+	})
+
+	log.Info("TestGetAllOpened finished!")
+}
+
+func TestUpdate(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+	defer cancel()
+
+	testTable := []struct {
+		name  string
+		input model.Position
+	}{
+		{
+			name: "std input-1",
+			input: model.Position{
+				OperationID: input1.OperationID,
+				ClosePrice:  closePrice1,
+				Open:        false,
+			},
+		},
+		{
+			name: "std input-2",
+			input: model.Position{
+				OperationID: input2.OperationID,
+				ClosePrice:  closePrice2,
+				Open:        false,
+			},
+		},
+		{
+			name: "std input-3",
+			input: model.Position{
+				OperationID: input3.OperationID,
+				ClosePrice:  closePrice3,
+				Open:        true,
+			},
+		},
+	}
+
+	for _, test := range testTable {
+		err := conn.Update(ctx, test.input)
+
+		assert.Nil(t, err, test.name)
+	}
+
+	log.Info("TestUpdate finished!")
+}
+
 func TestPostgresGet(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
 	defer cancel()
@@ -195,15 +273,39 @@ func TestPostgresGet(t *testing.T) {
 			name:  "standart input-1&3",
 			input: input1.UserID,
 			expected: []model.Position{
-				input1,
-				input3,
+				{
+					OperationID: input1.OperationID,
+					UserID:      input1.UserID,
+					Symbol:      input1.Symbol,
+					OpenPrice:   input1.OpenPrice,
+					ClosePrice:  closePrice1,
+					Buy:         input1.Buy,
+					Open:        false,
+				},
+				{
+					OperationID: input3.OperationID,
+					UserID:      input3.UserID,
+					Symbol:      input3.Symbol,
+					OpenPrice:   input3.OpenPrice,
+					ClosePrice:  closePrice3,
+					Buy:         input3.Buy,
+					Open:        true,
+				},
 			},
 			hasError: false,
 		},
 		{
-			name:     "standart input-2",
-			input:    input2.UserID,
-			expected: []model.Position{input2},
+			name:  "standart input-2",
+			input: input2.UserID,
+			expected: []model.Position{{
+				OperationID: input2.OperationID,
+				UserID:      input2.UserID,
+				Symbol:      input2.Symbol,
+				OpenPrice:   input2.OpenPrice,
+				ClosePrice:  closePrice2,
+				Buy:         input2.Buy,
+				Open:        false,
+			}},
 			hasError: false,
 		},
 	}
@@ -223,6 +325,41 @@ func TestPostgresGet(t *testing.T) {
 	}
 
 	log.Info("TestPostgresGet finished!")
+}
+
+func TestGetOneState(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+	defer cancel()
+
+	testTable := []struct {
+		name     string
+		input    uuid.UUID
+		expected bool
+	}{
+		{
+			name:     "std input-1",
+			input:    input1.OperationID,
+			expected: false,
+		},
+		{
+			name:     "std input-2",
+			input:    input2.OperationID,
+			expected: false,
+		},
+		{
+			name:     "std input-1",
+			input:    input3.OperationID,
+			expected: true,
+		},
+	}
+
+	for _, test := range testTable {
+		actual, err := conn.GetOneState(ctx, test.input)
+		assert.Nil(t, err, test.name)
+		assert.Equal(t, test.expected, actual, test.name)
+	}
+
+	log.Info("TestGetOneState finished!")
 }
 
 func TestPostgresDelete(t *testing.T) {
@@ -263,3 +400,15 @@ func TestPostgresDelete(t *testing.T) {
 
 	log.Info("TestPostgresDelete finished!")
 }
+
+// func TestUpdate(t *testing.T) {
+
+// }
+
+// func TestGetAllOpened(t *testing.T) {
+
+// }
+
+// func TestGetOneState(t *testing.T) {
+
+// }
