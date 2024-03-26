@@ -4,6 +4,7 @@ CREATE TABLE trading.positions (
     symbol varchar(10),
     open_price decimal,
     close_price decimal,
+    created_at timestamp WITH time zone DEFAULT NOW(),
     buy boolean,
-    open boolean
+    OPEN boolean
 );

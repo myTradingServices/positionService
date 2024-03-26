@@ -27,43 +27,46 @@ func NewPositionConsumer(db service.DBInterface, mapServ service.MapInterface[mo
 }
 
 func (p *position) ConsumePrice(ctx context.Context) {
-	started := make(map[string]struct{})
+	positions, err := p.db.GetLaterThen(ctx, time.Now().Add(-time.Minute))
+	if err != nil {
+		log.Errorf("repository error: %v, exiting consumer", err)
+		return
+	}
+
+	lastTime := time.Now()
 
 	for {
-		allOpened, err := p.db.GetAllOpend(ctx)
+		for _, pos := range positions {
+			priceChan, err := p.mapServ.Get(model.SymbOperDTO{
+				Symbol:    pos.Symbol,
+				Operation: pos.OperationID.String(),
+			})
+			if err != nil {
+				log.Error("repository error:", err)
+				continue
+			}
+
+			go func(ch chan model.Price, openPrice decimal.Decimal, buy bool) {
+				for {
+					price := <-ch
+					pnl := computePNL(openPrice, price, buy)
+
+					log.WithFields(log.Fields{
+						"Symbol: ": price.Symbol,
+						"PNL: ":    pnl,
+					}).Info("Profit and loss info")
+
+					time.Sleep(time.Second)
+				}
+			}(priceChan, pos.OpenPrice, pos.Buy)
+		}
+
+		positions, err = p.db.GetLaterThen(ctx, lastTime)
 		if err != nil {
 			log.Errorf("repository error: %v, exiting consumer", err)
-			return
+			break
 		}
-
-		for _, pos := range allOpened {
-			if _, ok := started[pos.Symbol]; !ok {
-				started[pos.Symbol] = struct{}{}
-
-				priceChan, err := p.mapServ.Get(model.SymbOperDTO{
-					Symbol:    pos.Symbol,
-					Operation: pos.OperationID.String(),
-				})
-				if err != nil {
-					log.Error("repository error:", err)
-					continue // change to break?
-				}
-
-				go func(ch chan model.Price, openPrice decimal.Decimal, buy bool) {
-					for {
-						price := <-ch
-						pnl := computePNL(openPrice, price, buy)
-
-						log.WithFields(log.Fields{
-							"Symbol: ": price.Symbol,
-							"PNL: ":    pnl,
-						}).Info("Profit and loss info")
-
-						time.Sleep(time.Second)
-					}
-				}(priceChan, pos.OpenPrice, pos.Buy)
-			}
-		}
+		lastTime = time.Now()
 
 		time.Sleep(time.Millisecond * 3)
 	}

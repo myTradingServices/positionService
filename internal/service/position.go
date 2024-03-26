@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/mmfshirokan/positionService/internal/model"
@@ -17,7 +18,7 @@ type DBInterface interface {
 	Deleete(ctx context.Context, id uuid.UUID) error
 	Get(ctx context.Context, id uuid.UUID) ([]model.Position, error)
 	Update(ctx context.Context, position model.Position) error
-	GetAllOpend(ctx context.Context) ([]model.Position, error)
+	GetLaterThen(ctx context.Context, t time.Time) ([]model.Position, error)
 	GetOneState(ctx context.Context, operID uuid.UUID) (bool, error)
 }
 
@@ -43,8 +44,8 @@ func (r *dbRepo) Update(ctx context.Context, position model.Position) error {
 	return r.repo.Update(ctx, position)
 }
 
-func (r *dbRepo) GetAllOpend(ctx context.Context) ([]model.Position, error) {
-	return r.repo.GetAllOpend(ctx)
+func (r *dbRepo) GetLaterThen(ctx context.Context, t time.Time) ([]model.Position, error) {
+	return r.repo.GetLaterThen(ctx, t)
 }
 
 func (r *dbRepo) GetOneState(ctx context.Context, operID uuid.UUID) (bool, error) {

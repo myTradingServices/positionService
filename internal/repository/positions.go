@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,7 +19,7 @@ type DBInterface interface {
 	Deleete(ctx context.Context, id uuid.UUID) error
 	Get(ctx context.Context, id uuid.UUID) ([]model.Position, error)
 	Update(ctx context.Context, position model.Position) error
-	GetAllOpend(ctx context.Context) ([]model.Position, error)
+	GetLaterThen(ctx context.Context, t time.Time) ([]model.Position, error)
 	GetOneState(ctx context.Context, operID uuid.UUID) (open bool, err error)
 }
 
@@ -30,11 +31,12 @@ func NewPostgresRepository(conn *pgxpool.Pool) DBInterface {
 
 // NOTE: Add without close price
 func (p *postgres) Add(ctx context.Context, position model.Position) error {
-	_, err := p.dbpool.Exec(ctx, "INSERT INTO trading.positions (operation_id, user_id, symbol, open_price, buy, open) VALUES ($1, $2, $3, $4, $5, $6)",
+	_, err := p.dbpool.Exec(ctx, "INSERT INTO trading.positions (operation_id, user_id, symbol, created_at, open_price, buy, open) VALUES ($1, $2, $3, $4, $5, $6)",
 		position.OperationID,
 		position.UserID,
 		position.Symbol,
 		position.OpenPrice,
+		position.CreatedAt,
 		position.Buy,
 		position.Open,
 	)
@@ -46,6 +48,7 @@ func (p *postgres) Deleete(ctx context.Context, operID uuid.UUID) error {
 	return err
 }
 
+// TODO: Add created_at?
 func (p *postgres) Get(ctx context.Context, userID uuid.UUID) (res []model.Position, err error) {
 	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, user_id, symbol, open_price, close_price, buy, open) FROM trading.positions WHERE user_id = $1", userID)
 	if err != nil {
@@ -72,9 +75,8 @@ func (p *postgres) Update(ctx context.Context, pos model.Position) error {
 	return err
 }
 
-func (p *postgres) GetAllOpend(ctx context.Context) (res []model.Position, err error) {
-
-	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, symbol, open_price, buy) FROM trading.positions WHERE open = true")
+func (p *postgres) GetLaterThen(ctx context.Context, t time.Time) (res []model.Position, err error) {
+	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, symbol, open_price, buy) FROM trading.positions WHERE open_time > $1", t)
 	if err != nil {
 		return nil, err
 	}

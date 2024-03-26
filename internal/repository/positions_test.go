@@ -186,35 +186,37 @@ func TestPostgresAdd(t *testing.T) {
 	log.Info("TestPostgresAdd finished!")
 }
 
-func TestGetAllOpened(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
-	defer cancel()
+//TODO change to GetLaterThen
 
-	opened, err := conn.GetAllOpend(ctx)
-	assert.Nil(t, err, "GetAllOpened error is not nil")
-	assert.ElementsMatch(t, opened, []model.Position{
-		{
-			OperationID: input1.OperationID,
-			Symbol:      input1.Symbol,
-			Buy:         input1.Buy,
-			OpenPrice:   input1.OpenPrice,
-		},
-		{
-			OperationID: input2.OperationID,
-			Symbol:      input2.Symbol,
-			Buy:         input2.Buy,
-			OpenPrice:   input2.OpenPrice,
-		},
-		{
-			OperationID: input3.OperationID,
-			Symbol:      input3.Symbol,
-			Buy:         input3.Buy,
-			OpenPrice:   input3.OpenPrice,
-		},
-	})
+// func TestGetAllOpened(t *testing.T) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+// 	defer cancel()
 
-	log.Info("TestGetAllOpened finished!")
-}
+// 	opened, err := conn.GetAllOpend(ctx)
+// 	assert.Nil(t, err, "GetAllOpened error is not nil")
+// 	assert.ElementsMatch(t, opened, []model.Position{
+// 		{
+// 			OperationID: input1.OperationID,
+// 			Symbol:      input1.Symbol,
+// 			Buy:         input1.Buy,
+// 			OpenPrice:   input1.OpenPrice,
+// 		},
+// 		{
+// 			OperationID: input2.OperationID,
+// 			Symbol:      input2.Symbol,
+// 			Buy:         input2.Buy,
+// 			OpenPrice:   input2.OpenPrice,
+// 		},
+// 		{
+// 			OperationID: input3.OperationID,
+// 			Symbol:      input3.Symbol,
+// 			Buy:         input3.Buy,
+// 			OpenPrice:   input3.OpenPrice,
+// 		},
+// 	})
+
+// 	log.Info("TestGetAllOpened finished!")
+// }
 
 func TestUpdate(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)

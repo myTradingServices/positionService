@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
@@ -11,6 +13,7 @@ type Position struct {
 	Symbol      string
 	OpenPrice   decimal.Decimal
 	ClosePrice  decimal.Decimal
+	CreatedAt   time.Time
 	Buy         bool
 	Open        bool
 }
