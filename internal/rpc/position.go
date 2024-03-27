@@ -13,7 +13,7 @@ import (
 
 type positionServer struct {
 	db    service.DBInterface
-	price priceServer
+	price Reciver
 	pb.UnimplementedPositionServer
 }
 
@@ -22,7 +22,7 @@ type Positioner interface {
 	OpenPosition(ctx context.Context, recv *pb.RequestOpenPosition) (*emptypb.Empty, error)
 }
 
-func NewPositionServer(db service.DBInterface, price priceServer) pb.PositionServer {
+func NewPositionServer(db service.DBInterface, price Reciver) pb.PositionServer {
 	return &positionServer{
 		db:    db,
 		price: price,

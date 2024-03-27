@@ -36,7 +36,6 @@ func (p *priceServer) ReciveStream(ctx context.Context) {
 		return
 	}
 	defer stream.CloseSend()
-
 	for {
 		recv, err := stream.Recv()
 		if err == io.EOF {

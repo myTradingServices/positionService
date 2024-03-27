@@ -20,9 +20,8 @@ import (
 )
 
 // Note: using decimal.New(_, 1) results in assert error
-// beter use assert for each field + decimal.Compare
+// maybe beter use assert for each field + decimal.Compare
 
-// TODO: remove hasError filed from testTables where it's unnesasary
 var (
 	conn DBInterface
 

@@ -1,4 +1,6 @@
 start: 
 	go run main.go
-gen:
+gen rpc:
 	cd ./proto &&  protoc --go_out=. --go-grpc_out=. *.proto && cd ../
+gen mock:
+	mockery --dir ./internal/service --name DBInterface --output ./internal/rpc/mock --with-expecter
