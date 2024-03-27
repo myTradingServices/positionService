@@ -133,10 +133,8 @@ func TestMain(m *testing.M) {
 	pool.MaxWait = 120 * time.Second
 	conn = NewPostgresRepository(dbpool)
 
-	mapStrChan := make(map[string]chan model.Price)
 	mapStrMapStrChan := make(map[string]map[string]chan model.Price)
-	connMap = NewStringPrice(mapStrChan)
-	connMapMap = NewSymbOperMap(mapStrMapStrChan)
+	connMap = NewSymbOperMap(mapStrMapStrChan)
 
 	code := m.Run()
 
@@ -186,37 +184,35 @@ func TestPostgresAdd(t *testing.T) {
 	log.Info("TestPostgresAdd finished!")
 }
 
-//TODO change to GetLaterThen
+func TestGetAllOpened(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+	defer cancel()
 
-// func TestGetAllOpened(t *testing.T) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
-// 	defer cancel()
+	opened, err := conn.GetAllOpend(ctx)
+	assert.Nil(t, err, "GetAllOpened error is not nil")
+	assert.ElementsMatch(t, opened, []model.Position{
+		{
+			OperationID: input1.OperationID,
+			Symbol:      input1.Symbol,
+			Buy:         input1.Buy,
+			OpenPrice:   input1.OpenPrice,
+		},
+		{
+			OperationID: input2.OperationID,
+			Symbol:      input2.Symbol,
+			Buy:         input2.Buy,
+			OpenPrice:   input2.OpenPrice,
+		},
+		{
+			OperationID: input3.OperationID,
+			Symbol:      input3.Symbol,
+			Buy:         input3.Buy,
+			OpenPrice:   input3.OpenPrice,
+		},
+	})
 
-// 	opened, err := conn.GetAllOpend(ctx)
-// 	assert.Nil(t, err, "GetAllOpened error is not nil")
-// 	assert.ElementsMatch(t, opened, []model.Position{
-// 		{
-// 			OperationID: input1.OperationID,
-// 			Symbol:      input1.Symbol,
-// 			Buy:         input1.Buy,
-// 			OpenPrice:   input1.OpenPrice,
-// 		},
-// 		{
-// 			OperationID: input2.OperationID,
-// 			Symbol:      input2.Symbol,
-// 			Buy:         input2.Buy,
-// 			OpenPrice:   input2.OpenPrice,
-// 		},
-// 		{
-// 			OperationID: input3.OperationID,
-// 			Symbol:      input3.Symbol,
-// 			Buy:         input3.Buy,
-// 			OpenPrice:   input3.OpenPrice,
-// 		},
-// 	})
-
-// 	log.Info("TestGetAllOpened finished!")
-// }
+	log.Info("TestGetAllOpened finished!")
+}
 
 func TestUpdate(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
@@ -322,7 +318,18 @@ func TestPostgresGet(t *testing.T) {
 				continue
 			}
 
-			assert.Equal(t, test.expected, actual, test.name)
+			for i, actVal := range actual {
+				assert.Equal(t, test.expected[i].Buy, actVal.Buy, test.name)
+				assert.Equal(t, test.expected[i].ClosePrice, actVal.ClosePrice, test.name)
+				assert.Equal(t, test.expected[i].OpenPrice, actVal.OpenPrice, test.name)
+				assert.Equal(t, test.expected[i].Open, actVal.Open, test.name)
+				assert.Equal(t, test.expected[i].OperationID, actVal.OperationID, test.name)
+				assert.Equal(t, test.expected[i].Symbol, actVal.Symbol, test.name)
+				assert.Equal(t, test.expected[i].UserID, actVal.UserID, test.name)
+				if ok := actVal.CreatedAt.After(time.Now().Add(-time.Second * 2)); !ok {
+					t.Errorf("CreatedAt is not valid: %v.\n Created time: %v, Now: %v", test.name, actVal.CreatedAt.String(), time.Now())
+				}
+			}
 		}
 	}
 
@@ -402,15 +409,3 @@ func TestPostgresDelete(t *testing.T) {
 
 	log.Info("TestPostgresDelete finished!")
 }
-
-// func TestUpdate(t *testing.T) {
-
-// }
-
-// func TestGetAllOpened(t *testing.T) {
-
-// }
-
-// func TestGetOneState(t *testing.T) {
-
-// }

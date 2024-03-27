@@ -13,7 +13,7 @@ import (
 
 type priceServer struct {
 	client   pb.ConsumerClient
-	chSender chan<- chan model.Price
+	chSender chan model.Price
 }
 
 type Reciver interface {
@@ -21,7 +21,7 @@ type Reciver interface {
 	ReciveLast(ctx context.Context, symb string) (model.Price, error)
 }
 
-func NewPriceServer(connecion *grpc.ClientConn, chSender chan<- chan model.Price) Reciver {
+func NewPriceServer(connecion *grpc.ClientConn, chSender chan model.Price) Reciver {
 	client := pb.NewConsumerClient(connecion)
 	return &priceServer{
 		client:   client,
@@ -37,8 +37,6 @@ func (p *priceServer) ReciveStream(ctx context.Context) {
 	}
 	defer stream.CloseSend()
 
-	symbChanMap := make(map[string]chan model.Price)
-
 	for {
 		recv, err := stream.Recv()
 		if err == io.EOF {
@@ -50,24 +48,12 @@ func (p *priceServer) ReciveStream(ctx context.Context) {
 			return
 		}
 
-		if _, ok := symbChanMap[recv.Symbol]; !ok {
-			symbChanMap[recv.Symbol] = make(chan model.Price)
-			symbChanMap[recv.Symbol] <- model.Price{
-				Date:   recv.Date.AsTime(),
-				Bid:    decimal.New(recv.Bid.Value, recv.Bid.Exp),
-				Ask:    decimal.New(recv.Ask.Value, recv.Ask.Exp),
-				Symbol: recv.Symbol,
-			}
-		} else {
-			symbChanMap[recv.Symbol] <- model.Price{
-				Date:   recv.Date.AsTime(),
-				Bid:    decimal.New(recv.Bid.Value, recv.Bid.Exp),
-				Ask:    decimal.New(recv.Ask.Value, recv.Ask.Exp),
-				Symbol: recv.Symbol,
-			}
+		p.chSender <- model.Price{
+			Date:   recv.Date.AsTime(),
+			Bid:    decimal.New(recv.Bid.Value, recv.Bid.Exp),
+			Ask:    decimal.New(recv.Ask.Value, recv.Ask.Exp),
+			Symbol: recv.Symbol,
 		}
-
-		p.chSender <- symbChanMap[recv.Symbol]
 	}
 }
 

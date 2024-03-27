@@ -19,6 +19,7 @@ type DBInterface interface {
 	Get(ctx context.Context, id uuid.UUID) ([]model.Position, error)
 	Update(ctx context.Context, position model.Position) error
 	GetLaterThen(ctx context.Context, t time.Time) ([]model.Position, error)
+	GetAllOpend(ctx context.Context) ([]model.Position, error)
 	GetOneState(ctx context.Context, operID uuid.UUID) (bool, error)
 }
 
@@ -46,6 +47,10 @@ func (r *dbRepo) Update(ctx context.Context, position model.Position) error {
 
 func (r *dbRepo) GetLaterThen(ctx context.Context, t time.Time) ([]model.Position, error) {
 	return r.repo.GetLaterThen(ctx, t)
+}
+
+func (r *dbRepo) GetAllOpend(ctx context.Context) ([]model.Position, error) {
+	return r.repo.GetAllOpend(ctx)
 }
 
 func (r *dbRepo) GetOneState(ctx context.Context, operID uuid.UUID) (bool, error) {
