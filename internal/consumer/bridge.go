@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type BridgeInterface interface {
+type Bridger interface {
 	Bridge(ctx context.Context)
 }
 
@@ -17,7 +17,7 @@ type bridge struct {
 	ch          chan model.Price
 }
 
-func NewBridge(ch chan model.Price, positionMap service.MapInterface) BridgeInterface {
+func NewBridge(ch chan model.Price, positionMap service.MapInterface) Bridger {
 	return &bridge{
 		ch:          ch,
 		positionMap: positionMap,

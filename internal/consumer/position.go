@@ -15,11 +15,11 @@ type position struct {
 	mapServ service.MapInterface
 }
 
-type PosirionIntrerface interface {
+type Pricer interface {
 	ConsumePrice(ctx context.Context)
 }
 
-func NewPositionConsumer(db service.DBInterface, mapServ service.MapInterface) PosirionIntrerface {
+func NewPositionConsumer(db service.DBInterface, mapServ service.MapInterface) Pricer {
 	return &position{
 		db:      db,
 		mapServ: mapServ,
@@ -27,7 +27,7 @@ func NewPositionConsumer(db service.DBInterface, mapServ service.MapInterface) P
 }
 
 func (p *position) ConsumePrice(ctx context.Context) {
-	t := time.NewTicker(time.Second)
+	t := time.NewTicker(time.Second * 2)
 	defer t.Stop()
 
 	positions, err := p.db.GetAllOpend(ctx)
