@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"time"
 
 	"github.com/mmfshirokan/positionService/internal/model"
 	"github.com/mmfshirokan/positionService/internal/service"
@@ -11,7 +10,7 @@ import (
 )
 
 type position struct {
-	db      service.DBInterface
+	ch      chan model.Position
 	mapServ service.MapInterface
 }
 
@@ -19,65 +18,53 @@ type Pricer interface {
 	ConsumePrice(ctx context.Context)
 }
 
-func NewPositionConsumer(db service.DBInterface, mapServ service.MapInterface) Pricer {
+func NewPositionConsumer(ch chan model.Position, mapServ service.MapInterface) Pricer {
 	return &position{
-		db:      db,
+		ch:      ch,
 		mapServ: mapServ,
 	}
 }
 
 func (p *position) ConsumePrice(ctx context.Context) {
-	t := time.NewTicker(time.Second * 2)
-	defer t.Stop()
-
-	positions, err := p.db.GetAllOpend(ctx)
-	if err != nil {
-		log.Errorf("repository error: %v, exiting consumer", err)
-		return
-	}
-
 	for {
+
 		select {
 		case <-ctx.Done():
 			return
-		case <-t.C:
+		default:
 			{
-				timeBigest := time.Time{}
 
-				for _, pos := range positions {
-					key := model.SymbOperDTO{
-						Symbol:    pos.Symbol,
-						Operation: pos.OperationID.String(),
-					}
-
-					priceChan := make(chan model.Price)
-					err := p.mapServ.Add(key, priceChan)
-					if err != nil {
-						log.Error("Map repository error:", err)
-						return
-					}
-
-					if timeBigest.Before(pos.CreatedAt) {
-						timeBigest = pos.CreatedAt
-					}
-
-					go func(ch chan model.Price, openPrice decimal.Decimal, buy bool) {
-						for {
-							price := <-ch
-							pnl := computePNL(openPrice, price, buy)
-
-							log.WithFields(log.Fields{
-								"Symbol: ": price.Symbol,
-								"PNL: ":    pnl,
-							}).Info("Profit and loss info")
+				select {
+				case pos := <-p.ch:
+					{
+						key := model.SymbOperDTO{
+							Symbol:    pos.Symbol,
+							Operation: pos.OperationID.String(),
 						}
-					}(priceChan, pos.OpenPrice, pos.Buy)
-				}
 
-				positions, err = p.db.GetLaterThen(ctx, timeBigest)
-				if err != nil {
-					log.Error("repository error:", err)
-					return
+						priceChan := make(chan model.Price)
+						err := p.mapServ.Add(key, priceChan)
+						if err != nil {
+							log.Error("Map repository error:", err)
+						}
+
+						go func(ch chan model.Price, openPrice decimal.Decimal, buy bool) {
+							for {
+								price, ok := <-ch
+								if !ok {
+									return
+								}
+
+								pnl := computePNL(openPrice, price, buy)
+
+								log.WithFields(log.Fields{
+									"Symbol: ": price.Symbol,
+									"PNL: ":    pnl,
+								}).Info("Profit and loss info")
+							}
+						}(priceChan, pos.OpenPrice, pos.Long)
+					}
+				default:
 				}
 			}
 		}
@@ -91,3 +78,41 @@ func computePNL(openPrice decimal.Decimal, currentPrice model.Price, buy bool) d
 
 	return openPrice.Add(currentPrice.Bid.Neg())
 }
+
+// timeBigest := time.Time{}
+
+// for _, pos := range positions {
+// 	key := model.SymbOperDTO{
+// 		Symbol:    pos.Symbol,
+// 		Operation: pos.OperationID.String(),
+// 	}
+
+// 	priceChan := make(chan model.Price)
+// 	err := p.mapServ.Add(key, priceChan)
+// 	if err != nil {
+// 		log.Error("Map repository error:", err)
+// 		return
+// 	}
+
+// 	if timeBigest.After(pos.CreatedAt) {
+// 		timeBigest = pos.CreatedAt
+// 	}
+
+// 	go func(ch chan model.Price, openPrice decimal.Decimal, buy bool) {
+// 		for {
+// 			price := <-ch
+// 			pnl := computePNL(openPrice, price, buy)
+
+// 			log.WithFields(log.Fields{
+// 				"Symbol: ": price.Symbol,
+// 				"PNL: ":    pnl,
+// 			}).Info("Profit and loss info")
+// 		}
+// 	}(priceChan, pos.OpenPrice, pos.Long)
+// }
+
+// positions, err = p.db.GetLaterThen(ctx, timeBigest)
+// if err != nil {
+// 	log.Error("repository error:", err)
+// 	return
+// }

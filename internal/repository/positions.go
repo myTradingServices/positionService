@@ -32,13 +32,12 @@ func NewPostgresRepository(conn *pgxpool.Pool) DBInterface {
 
 // NOTE: Add without close price
 func (p *postgres) Add(ctx context.Context, position model.Position) error {
-	_, err := p.dbpool.Exec(ctx, "INSERT INTO trading.positions (operation_id, user_id, symbol, open_price, buy, open) VALUES ($1, $2, $3, $4, $5, $6)",
+	_, err := p.dbpool.Exec(ctx, "INSERT INTO trading.positions (operation_id, user_id, symbol, open_price, long) VALUES ($1, $2, $3, $4, $5)",
 		position.OperationID,
 		position.UserID,
 		position.Symbol,
 		position.OpenPrice,
-		position.Buy,
-		position.Open,
+		position.Long,
 	)
 	return err
 }
@@ -48,9 +47,8 @@ func (p *postgres) Deleete(ctx context.Context, operID uuid.UUID) error {
 	return err
 }
 
-// TODO: Add created_at?
 func (p *postgres) Get(ctx context.Context, userID uuid.UUID) (res []model.Position, err error) {
-	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, user_id, symbol, open_price, close_price, created_at, buy, open) FROM trading.positions WHERE user_id = $1", userID)
+	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, user_id, symbol, open_price, close_price, created_at, long) FROM trading.positions WHERE user_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,12 +69,12 @@ func (p *postgres) Get(ctx context.Context, userID uuid.UUID) (res []model.Posit
 }
 
 func (p *postgres) Update(ctx context.Context, pos model.Position) error {
-	_, err := p.dbpool.Exec(ctx, "UPDATE trading.positions SET close_price = $1, open = $2 WHERE operation_id = $3", pos.ClosePrice, pos.Open, pos.OperationID)
+	_, err := p.dbpool.Exec(ctx, "UPDATE trading.positions SET close_price = $1 WHERE operation_id = $3", pos.ClosePrice, pos.OperationID)
 	return err
 }
 
 func (p *postgres) GetLaterThen(ctx context.Context, t time.Time) (res []model.Position, err error) {
-	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, symbol, open_price, buy) FROM trading.positions WHERE open_time > $1", t)
+	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, symbol, open_price, long) FROM trading.positions WHERE open_time > $1", t)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +97,7 @@ func (p *postgres) GetLaterThen(ctx context.Context, t time.Time) (res []model.P
 			OperationID: tmpPos.OperationID,
 			Symbol:      tmpPos.Symbol,
 			OpenPrice:   tmpPos.OpenPrice,
-			Buy:         tmpPos.Buy,
+			Long:        tmpPos.Buy,
 		})
 	}
 
@@ -108,7 +106,7 @@ func (p *postgres) GetLaterThen(ctx context.Context, t time.Time) (res []model.P
 
 func (p *postgres) GetAllOpend(ctx context.Context) (res []model.Position, err error) {
 
-	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, symbol, open_price, buy) FROM trading.positions WHERE open = true")
+	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, symbol, open_price, long) FROM trading.positions WHERE open = true")
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +129,7 @@ func (p *postgres) GetAllOpend(ctx context.Context) (res []model.Position, err e
 			OperationID: tmpPos.OperationID,
 			Symbol:      tmpPos.Symbol,
 			OpenPrice:   tmpPos.OpenPrice,
-			Buy:         tmpPos.Buy,
+			Long:        tmpPos.Buy,
 		})
 	}
 

@@ -30,8 +30,7 @@ var (
 		UserID:      uuid.New(),
 		Symbol:      "symb1",
 		OpenPrice:   decimal.New(19, 0),
-		Buy:         true,
-		Open:        true,
+		Long:        true,
 	}
 
 	input2 = model.Position{
@@ -39,8 +38,7 @@ var (
 		UserID:      uuid.New(),
 		Symbol:      "symb2",
 		OpenPrice:   decimal.New(123, 0),
-		Buy:         false,
-		Open:        true,
+		Long:        false,
 	}
 
 	input3 = model.Position{
@@ -48,8 +46,7 @@ var (
 		UserID:      input1.UserID,
 		Symbol:      "symb1",
 		OpenPrice:   decimal.New(190, 0),
-		Buy:         true,
-		Open:        true,
+		Long:        true,
 	}
 
 	closePrice1 = decimal.New(130, 0)
@@ -193,19 +190,19 @@ func TestGetAllOpened(t *testing.T) {
 		{
 			OperationID: input1.OperationID,
 			Symbol:      input1.Symbol,
-			Buy:         input1.Buy,
+			Long:        input1.Long,
 			OpenPrice:   input1.OpenPrice,
 		},
 		{
 			OperationID: input2.OperationID,
 			Symbol:      input2.Symbol,
-			Buy:         input2.Buy,
+			Long:        input2.Long,
 			OpenPrice:   input2.OpenPrice,
 		},
 		{
 			OperationID: input3.OperationID,
 			Symbol:      input3.Symbol,
-			Buy:         input3.Buy,
+			Long:        input3.Long,
 			OpenPrice:   input3.OpenPrice,
 		},
 	})
@@ -226,7 +223,6 @@ func TestUpdate(t *testing.T) {
 			input: model.Position{
 				OperationID: input1.OperationID,
 				ClosePrice:  closePrice1,
-				Open:        false,
 			},
 		},
 		{
@@ -234,7 +230,6 @@ func TestUpdate(t *testing.T) {
 			input: model.Position{
 				OperationID: input2.OperationID,
 				ClosePrice:  closePrice2,
-				Open:        false,
 			},
 		},
 		{
@@ -242,7 +237,6 @@ func TestUpdate(t *testing.T) {
 			input: model.Position{
 				OperationID: input3.OperationID,
 				ClosePrice:  closePrice3,
-				Open:        true,
 			},
 		},
 	}
@@ -276,8 +270,7 @@ func TestPostgresGet(t *testing.T) {
 					Symbol:      input1.Symbol,
 					OpenPrice:   input1.OpenPrice,
 					ClosePrice:  closePrice1,
-					Buy:         input1.Buy,
-					Open:        false,
+					Long:        input1.Long,
 				},
 				{
 					OperationID: input3.OperationID,
@@ -285,8 +278,7 @@ func TestPostgresGet(t *testing.T) {
 					Symbol:      input3.Symbol,
 					OpenPrice:   input3.OpenPrice,
 					ClosePrice:  closePrice3,
-					Buy:         input3.Buy,
-					Open:        true,
+					Long:        input3.Long,
 				},
 			},
 			hasError: false,
@@ -300,8 +292,7 @@ func TestPostgresGet(t *testing.T) {
 				Symbol:      input2.Symbol,
 				OpenPrice:   input2.OpenPrice,
 				ClosePrice:  closePrice2,
-				Buy:         input2.Buy,
-				Open:        false,
+				Long:        input2.Long,
 			}},
 			hasError: false,
 		},
@@ -318,10 +309,9 @@ func TestPostgresGet(t *testing.T) {
 			}
 
 			for i, actVal := range actual {
-				assert.Equal(t, test.expected[i].Buy, actVal.Buy, test.name)
+				assert.Equal(t, test.expected[i].Long, actVal.Long, test.name)
 				assert.Equal(t, test.expected[i].ClosePrice, actVal.ClosePrice, test.name)
 				assert.Equal(t, test.expected[i].OpenPrice, actVal.OpenPrice, test.name)
-				assert.Equal(t, test.expected[i].Open, actVal.Open, test.name)
 				assert.Equal(t, test.expected[i].OperationID, actVal.OperationID, test.name)
 				assert.Equal(t, test.expected[i].Symbol, actVal.Symbol, test.name)
 				assert.Equal(t, test.expected[i].UserID, actVal.UserID, test.name)

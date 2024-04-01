@@ -16,6 +16,7 @@ var (
 type MapInterface interface {
 	Add(key model.SymbOperDTO, value chan model.Price) error
 	GetAllChanForSymb(symb string) (res []chan model.Price, _ error)
+	Get(key model.SymbOperDTO) (chan model.Price, error)
 }
 
 type symbOperPrice struct {
@@ -74,4 +75,16 @@ func (s *symbOperPrice) GetAllChanForSymb(symb string) (res []chan model.Price, 
 	s.mut.RUnlock()
 
 	return res, nil
+}
+
+func (s *symbOperPrice) Get(key model.SymbOperDTO) (chan model.Price, error) {
+	s.mut.RLock()
+	val, ok := s.symbOperMap[key.Symbol][key.Operation]
+	s.mut.RUnlock()
+
+	if !ok {
+		return nil, ErrGetElementThatNotExist
+	}
+
+	return val, nil
 }

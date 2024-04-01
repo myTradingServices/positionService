@@ -13,13 +13,13 @@ service Position {
 
 message requestOpenPosition {
     string operationID = 1;
-    bool buy = 2;
+    bool long = 2;
     string userID = 3; 
     string symbol = 4;
 }
 
 message requestClosePosition {
     string operationID = 1;
-    bool buy = 2;
+    bool long = 2;
     string symbol = 3; 
 }

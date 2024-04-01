@@ -37,14 +37,13 @@ func (p *positionServer) OpenPosition(ctx context.Context, recv *pb.RequestOpenP
 		return &emptypb.Empty{}, err
 	}
 
-	if recv.Buy {
+	if recv.Long {
 		err = p.db.Add(ctx, model.Position{
 			OperationID: uuid.MustParse(recv.OperationID),
 			UserID:      uuid.MustParse(recv.UserID),
 			Symbol:      recv.Symbol,
 			OpenPrice:   price.Bid,
-			Buy:         recv.Buy,
-			Open:        true,
+			Long:        recv.Long,
 		})
 	} else {
 		err = p.db.Add(ctx, model.Position{
@@ -52,8 +51,7 @@ func (p *positionServer) OpenPosition(ctx context.Context, recv *pb.RequestOpenP
 			UserID:      uuid.MustParse(recv.UserID),
 			Symbol:      recv.Symbol,
 			OpenPrice:   price.Ask,
-			Buy:         recv.Buy,
-			Open:        true,
+			Long:        recv.Long,
 		})
 	}
 
@@ -71,17 +69,15 @@ func (p *positionServer) ClosePosition(ctx context.Context, recv *pb.RequestClos
 		return &emptypb.Empty{}, err
 	}
 
-	if recv.Buy {
+	if recv.Long {
 		err = p.db.Update(ctx, model.Position{
 			OperationID: uuid.MustParse(recv.OperationID),
 			ClosePrice:  price.Ask,
-			Open:        false,
 		})
 	} else {
 		err = p.db.Update(ctx, model.Position{
 			OperationID: uuid.MustParse(recv.OperationID),
 			ClosePrice:  price.Bid,
-			Open:        false,
 		})
 	}
 

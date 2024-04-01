@@ -7,7 +7,8 @@ import (
 
 type MapInterface interface {
 	Add(key model.SymbOperDTO, val chan model.Price) error
-	GetAllChanForSymb(symb string) (res []chan model.Price, _ error)
+	GetAllChanForSymb(symb string) (res []chan model.Price, err error)
+	Get(key model.SymbOperDTO) (res chan model.Price, err error)
 }
 
 type symbOperPriceMap struct {
@@ -25,4 +26,8 @@ func (s *symbOperPriceMap) Add(key model.SymbOperDTO, val chan model.Price) erro
 
 func (s *symbOperPriceMap) GetAllChanForSymb(symb string) (res []chan model.Price, _ error) {
 	return s.repo.GetAllChanForSymb(symb)
+}
+
+func (s *symbOperPriceMap) Get(key model.SymbOperDTO) (res chan model.Price, err error) {
+	return s.repo.Get(key)
 }

@@ -18,36 +18,36 @@ import (
 var (
 	openPosInput1 = &pb.RequestOpenPosition{
 		OperationID: uuid.New().String(),
-		Buy:         true,
+		Long:        true,
 		UserID:      uuid.New().String(),
 		Symbol:      "symb1",
 	}
 	openPosInput2 = &pb.RequestOpenPosition{
 		OperationID: uuid.New().String(),
-		Buy:         false,
+		Long:        false,
 		UserID:      uuid.New().String(),
 		Symbol:      "symb2",
 	}
 	openPosInput3 = &pb.RequestOpenPosition{
 		OperationID: uuid.New().String(),
-		Buy:         true,
+		Long:        true,
 		UserID:      uuid.New().String(),
 		Symbol:      "symb3",
 	}
 
 	closePosInput1 = &pb.RequestClosePosition{
 		OperationID: uuid.New().String(),
-		Buy:         true,
+		Long:        true,
 		Symbol:      "symb1",
 	}
 	closePosInput2 = &pb.RequestClosePosition{
 		OperationID: uuid.New().String(),
-		Buy:         false,
+		Long:        false,
 		Symbol:      "symb2",
 	}
 	closePosInput3 = &pb.RequestClosePosition{
 		OperationID: uuid.New().String(),
-		Buy:         true,
+		Long:        true,
 		Symbol:      "symb3",
 	}
 )
@@ -110,9 +110,8 @@ func TestOpenClosePosition(t *testing.T) {
 			OperationID: uuid.MustParse(test.input.OperationID),
 			UserID:      uuid.MustParse(test.input.UserID),
 			Symbol:      test.input.Symbol,
-			OpenPrice:   bidOrAask(test.input.Buy),
-			Buy:         test.input.Buy,
-			Open:        true,
+			OpenPrice:   bidOrAask(test.input.Long),
+			Long:        test.input.Long,
 		}).Return(nil)
 
 		if _, err := posWr.OpenPosition(ctx, test.input); err != nil {
@@ -156,8 +155,7 @@ func TestOpenClosePosition(t *testing.T) {
 
 		mCall := dbMocks.EXPECT().Update(mock.Anything, model.Position{
 			OperationID: uuid.MustParse(test.input.OperationID),
-			ClosePrice:  bidOrAask(test.input.Buy),
-			Open:        false,
+			ClosePrice:  bidOrAask(test.input.Long),
 		}).Return(nil)
 
 		if _, err := posWr.ClosePosition(ctx, test.input); err != nil {
@@ -230,9 +228,8 @@ func ClosePosition(t *testing.T) {
 			OperationID: uuid.MustParse(test.input.OperationID),
 			UserID:      uuid.MustParse(test.input.UserID),
 			Symbol:      test.input.Symbol,
-			OpenPrice:   bidOrAask(test.input.Buy),
-			Buy:         test.input.Buy,
-			Open:        true,
+			OpenPrice:   bidOrAask(test.input.Long),
+			Long:        test.input.Long,
 		}).Return(nil)
 
 		if _, err := posWr.OpenPosition(ctx, test.input); err != nil {
