@@ -33,48 +33,48 @@ func TestBridge(t *testing.T) {
 		{
 			name: "symb1; oper1",
 			mapKey: model.SymbOperDTO{
-				Symbol:    "symb1",
-				Operation: uuid.NewString(),
+				Symbol: "symb1",
+				UserID: uuid.NewString(),
 			},
 			mapValue: make(chan model.Price),
 		},
 		{
 			name: "symb1; oper2",
 			mapKey: model.SymbOperDTO{
-				Symbol:    "symb1",
-				Operation: uuid.NewString(),
+				Symbol: "symb1",
+				UserID: uuid.NewString(),
 			},
 			mapValue: make(chan model.Price),
 		},
 		{
 			name: "symb1; oper3",
 			mapKey: model.SymbOperDTO{
-				Symbol:    "symb1",
-				Operation: uuid.NewString(),
+				Symbol: "symb1",
+				UserID: uuid.NewString(),
 			},
 			mapValue: make(chan model.Price),
 		},
 		{
 			name: "symb2; oper4",
 			mapKey: model.SymbOperDTO{
-				Symbol:    "symb2",
-				Operation: uuid.NewString(),
+				Symbol: "symb2",
+				UserID: uuid.NewString(),
 			},
 			mapValue: make(chan model.Price),
 		},
 		{
 			name: "symb2; oper5",
 			mapKey: model.SymbOperDTO{
-				Symbol:    "symb2",
-				Operation: uuid.NewString(),
+				Symbol: "symb2",
+				UserID: uuid.NewString(),
 			},
 			mapValue: make(chan model.Price),
 		},
 		{
 			name: "symb3; oper6",
 			mapKey: model.SymbOperDTO{
-				Symbol:    "symb3",
-				Operation: uuid.NewString(),
+				Symbol: "symb3",
+				UserID: uuid.NewString(),
 			},
 			mapValue: make(chan model.Price),
 		},

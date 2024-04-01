@@ -31,40 +31,40 @@ func TestMapAdd(t *testing.T) {
 		{
 			name: "standart input-1",
 			key: model.SymbOperDTO{
-				Symbol:    "symb1",
-				Operation: "oper1",
+				Symbol: "symb1",
+				UserID: "oper1",
 			},
 			value: mapInputValue1,
 		},
 		{
 			name: "standart input-2",
 			key: model.SymbOperDTO{
-				Symbol:    "symb2",
-				Operation: "oper2",
+				Symbol: "symb2",
+				UserID: "oper2",
 			},
 			value: mapInputValue2,
 		},
 		{
 			name: "standart input-3",
 			key: model.SymbOperDTO{
-				Symbol:    "symb3",
-				Operation: "oper3",
+				Symbol: "symb3",
+				UserID: "oper3",
 			},
 			value: mapInputValue3,
 		},
 		{
 			name: "standart input-4",
 			key: model.SymbOperDTO{
-				Symbol:    "symb1",
-				Operation: "oper4",
+				Symbol: "symb1",
+				UserID: "oper4",
 			},
 			value: mapInputValue4,
 		},
 		{
 			name: "standart input-5",
 			key: model.SymbOperDTO{
-				Symbol:    "symb1",
-				Operation: "oper5",
+				Symbol: "symb1",
+				UserID: "oper5",
 			},
 			value: mapInputValue5,
 		},
@@ -85,8 +85,8 @@ func TestMapAdd(t *testing.T) {
 	wg.Wait()
 
 	err := connMap.Add(model.SymbOperDTO{
-		Symbol:    "symb1",
-		Operation: "oper1",
+		Symbol: "symb1",
+		UserID: "oper1",
 	}, make(chan model.Price))
 	assert.Error(t, err, "error input")
 

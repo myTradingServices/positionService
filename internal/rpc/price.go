@@ -12,8 +12,8 @@ import (
 )
 
 type priceServer struct {
-	client   pb.ConsumerClient
-	chSender chan model.Price
+	client  pb.ConsumerClient
+	chPrice chan model.Price
 }
 
 type Reciver interface {
@@ -21,11 +21,11 @@ type Reciver interface {
 	ReciveLast(ctx context.Context, symb string) (model.Price, error)
 }
 
-func NewPriceServer(connecion *grpc.ClientConn, chSender chan model.Price) Reciver {
+func NewPriceServer(connecion *grpc.ClientConn, chPrice chan model.Price) Reciver {
 	client := pb.NewConsumerClient(connecion)
 	return &priceServer{
-		client:   client,
-		chSender: chSender,
+		client:  client,
+		chPrice: chPrice,
 	}
 }
 
@@ -47,7 +47,7 @@ func (p *priceServer) ReciveStream(ctx context.Context) {
 			return
 		}
 
-		p.chSender <- model.Price{
+		p.chPrice <- model.Price{
 			Date:   recv.Date.AsTime(),
 			Bid:    decimal.New(recv.Bid.Value, recv.Bid.Exp),
 			Ask:    decimal.New(recv.Ask.Value, recv.Ask.Exp),

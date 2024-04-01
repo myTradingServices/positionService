@@ -85,7 +85,7 @@ func TestConsumePrice(t *testing.T) {
 		}
 
 		for _, pos := range test.posForMapAdd {
-			mapMock.EXPECT().Add(model.SymbOperDTO{Symbol: pos.Symbol, Operation: pos.OperationID.String()}, mock.Anything).Return(nil)
+			mapMock.EXPECT().Add(model.SymbOperDTO{Symbol: pos.Symbol, UserID: pos.OperationID.String()}, mock.Anything).Return(nil)
 		}
 	}
 	//go posCons.ConsumePrice(ctx)

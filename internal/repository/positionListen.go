@@ -56,9 +56,9 @@ func (p *postgresListen) Listen(ctx context.Context) {
 
 		if nontification.Channel == "positionOpen" {
 			tmpModel := struct {
-				OperationID uuid.UUID
-				OpenPrice   decimal.Decimal
-				Long        bool
+				UserID    uuid.UUID
+				OpenPrice decimal.Decimal
+				Long      bool
 			}{}
 
 			err = json.Unmarshal([]byte(nontification.Payload), &tmpModel)
@@ -67,7 +67,7 @@ func (p *postgresListen) Listen(ctx context.Context) {
 			}
 
 			p.ch <- model.Position{
-				OperationID: tmpModel.OperationID,
+				OperationID: tmpModel.UserID,
 				OpenPrice:   tmpModel.OpenPrice,
 				Long:        tmpModel.Long,
 			}

@@ -14,11 +14,11 @@ $$
 BEGIN 
     IF (TG_OP = 'INSERT') THEN
         RAISE NOTICE '%', 'NOTIFY on INSERT';
-        PERFORM pg_notify('positionOpen', '{"operation_id":"' || NEW.operation_id::text || '","open_price":"' || NEW.open_price::text || '","long":' || NEW.buy::text || '"}'); 
+        PERFORM pg_notify('positionOpen', '{"user_id":"' || NEW.user_id::text || '","open_price":"' || NEW.open_price::text || '","long":' || NEW.buy::text || '"}'); 
         RETURN NEW;
     ELSE
         RAISE NOTICE '%', 'NOTIFY on UPDATE';
-        PERFORM pg_notify('positionClose', '{"operation_id":"' || NEW.operation_id::text || '","close_price":"' || NEW.close_price::text || '"}'); 
+        PERFORM pg_notify('positionClose', '{"user_id":"' || NEW.user_id::text || '","close_price":"' || NEW.close_price::text || '"}'); 
         RETURN NEW;
     END IF;
 END;

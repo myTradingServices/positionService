@@ -14,12 +14,12 @@ type Bridger interface {
 
 type bridge struct {
 	positionMap service.MapInterface
-	ch          chan model.Price
+	chPrice     chan model.Price
 }
 
-func NewBridge(ch chan model.Price, positionMap service.MapInterface) Bridger {
+func NewBridge(chPrice chan model.Price, positionMap service.MapInterface) Bridger {
 	return &bridge{
-		ch:          ch,
+		chPrice:     chPrice,
 		positionMap: positionMap,
 	}
 }
@@ -29,7 +29,7 @@ func (b *bridge) Bridge(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case tmpPrice := <-b.ch:
+		case tmpPrice := <-b.chPrice:
 			{
 				writeChanels, err := b.positionMap.GetAllChanForSymb(tmpPrice.Symbol)
 				if err != nil {

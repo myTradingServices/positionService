@@ -38,8 +38,20 @@ func (p *position) ConsumePrice(ctx context.Context) {
 				case pos := <-p.ch:
 					{
 						key := model.SymbOperDTO{
-							Symbol:    pos.Symbol,
-							Operation: pos.OperationID.String(),
+							Symbol: pos.Symbol,
+							UserID: pos.OperationID.String(),
+						}
+
+						if pos.OpenPrice.IsZero() {
+							log.Infof("Closing price chanel, therfore exiting goroutine with symb: %v, userID: %v", key.Symbol, key.UserID)
+
+							ch, err := p.mapServ.Get(key)
+							if err != nil {
+								log.Error("Error geting chanel for it's clouser")
+								continue
+							}
+
+							close(ch)
 						}
 
 						priceChan := make(chan model.Price)
