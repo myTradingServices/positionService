@@ -67,6 +67,64 @@ func (_c *MapInterface_Add_Call) RunAndReturn(run func(model.SymbOperDTO, chan m
 	return _c
 }
 
+// Get provides a mock function with given fields: key
+func (_m *MapInterface) Get(key model.SymbOperDTO) (chan model.Price, error) {
+	ret := _m.Called(key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
+	var r0 chan model.Price
+	var r1 error
+	if rf, ok := ret.Get(0).(func(model.SymbOperDTO) (chan model.Price, error)); ok {
+		return rf(key)
+	}
+	if rf, ok := ret.Get(0).(func(model.SymbOperDTO) chan model.Price); ok {
+		r0 = rf(key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(chan model.Price)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(model.SymbOperDTO) error); ok {
+		r1 = rf(key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MapInterface_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
+type MapInterface_Get_Call struct {
+	*mock.Call
+}
+
+// Get is a helper method to define mock.On call
+//   - key model.SymbOperDTO
+func (_e *MapInterface_Expecter) Get(key interface{}) *MapInterface_Get_Call {
+	return &MapInterface_Get_Call{Call: _e.mock.On("Get", key)}
+}
+
+func (_c *MapInterface_Get_Call) Run(run func(key model.SymbOperDTO)) *MapInterface_Get_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(model.SymbOperDTO))
+	})
+	return _c
+}
+
+func (_c *MapInterface_Get_Call) Return(res chan model.Price, err error) *MapInterface_Get_Call {
+	_c.Call.Return(res, err)
+	return _c
+}
+
+func (_c *MapInterface_Get_Call) RunAndReturn(run func(model.SymbOperDTO) (chan model.Price, error)) *MapInterface_Get_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetAllChanForSymb provides a mock function with given fields: symb
 func (_m *MapInterface) GetAllChanForSymb(symb string) ([]chan model.Price, error) {
 	ret := _m.Called(symb)
@@ -115,8 +173,8 @@ func (_c *MapInterface_GetAllChanForSymb_Call) Run(run func(symb string)) *MapIn
 	return _c
 }
 
-func (_c *MapInterface_GetAllChanForSymb_Call) Return(res []chan model.Price, _a1 error) *MapInterface_GetAllChanForSymb_Call {
-	_c.Call.Return(res, _a1)
+func (_c *MapInterface_GetAllChanForSymb_Call) Return(res []chan model.Price, err error) *MapInterface_GetAllChanForSymb_Call {
+	_c.Call.Return(res, err)
 	return _c
 }
 

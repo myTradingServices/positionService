@@ -19,7 +19,7 @@ message requestOpenPosition {
 }
 
 message requestClosePosition {
-    string operationID = 1;
+    string userID = 1;
     bool long = 2;
     string symbol = 3; 
 }

@@ -16,14 +16,16 @@ type Listener interface {
 }
 
 type postgresListen struct {
-	dbpool *pgxpool.Pool
-	ch     chan model.Position
+	dbpool  *pgxpool.Pool
+	openCh  chan model.Position
+	closeCh chan model.Position
 }
 
-func NewPgListen(ch chan model.Position, dbpool *pgxpool.Pool) Listener {
+func NewPgListen(openCh chan model.Position, closeCh chan model.Position, dbpool *pgxpool.Pool) Listener {
 	return &postgresListen{
-		dbpool: dbpool,
-		ch:     ch,
+		dbpool:  dbpool,
+		openCh:  openCh,
+		closeCh: closeCh,
 	}
 }
 
@@ -56,6 +58,7 @@ func (p *postgresListen) Listen(ctx context.Context) {
 
 		if nontification.Channel == "positionOpen" {
 			tmpModel := struct {
+				Symbol    string
 				UserID    uuid.UUID
 				OpenPrice decimal.Decimal
 				Long      bool
@@ -66,17 +69,19 @@ func (p *postgresListen) Listen(ctx context.Context) {
 				log.Error("Error unmarshalling notification:", err)
 			}
 
-			p.ch <- model.Position{
-				OperationID: tmpModel.UserID,
-				OpenPrice:   tmpModel.OpenPrice,
-				Long:        tmpModel.Long,
+			p.openCh <- model.Position{
+				Symbol:    tmpModel.Symbol,
+				UserID:    tmpModel.UserID,
+				OpenPrice: tmpModel.OpenPrice,
+				Long:      tmpModel.Long,
 			}
 			continue
 		}
 
 		tmpModel := struct {
-			OperationID uuid.UUID
-			OpenPrice   decimal.Decimal
+			Symbol    string
+			UserID    uuid.UUID
+			OpenPrice decimal.Decimal
 		}{}
 
 		err = json.Unmarshal([]byte(nontification.Payload), &tmpModel)
@@ -84,9 +89,10 @@ func (p *postgresListen) Listen(ctx context.Context) {
 			log.Error("Error unmarshalling notification:", err)
 		}
 
-		p.ch <- model.Position{
-			OperationID: tmpModel.OperationID,
-			OpenPrice:   tmpModel.OpenPrice,
+		p.closeCh <- model.Position{
+			Symbol:    tmpModel.Symbol,
+			UserID:    tmpModel.UserID,
+			OpenPrice: tmpModel.OpenPrice,
 		}
 	}
 

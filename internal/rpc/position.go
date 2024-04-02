@@ -71,13 +71,15 @@ func (p *positionServer) ClosePosition(ctx context.Context, recv *pb.RequestClos
 
 	if recv.Long {
 		err = p.db.Update(ctx, model.Position{
-			OperationID: uuid.MustParse(recv.OperationID),
-			ClosePrice:  price.Ask,
+			UserID:     uuid.MustParse(recv.UserID),
+			Symbol:     recv.Symbol,
+			ClosePrice: price.Ask,
 		})
 	} else {
 		err = p.db.Update(ctx, model.Position{
-			OperationID: uuid.MustParse(recv.OperationID),
-			ClosePrice:  price.Bid,
+			UserID:     uuid.MustParse(recv.UserID),
+			Symbol:     recv.Symbol,
+			ClosePrice: price.Bid,
 		})
 	}
 

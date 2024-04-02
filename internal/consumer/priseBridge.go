@@ -8,30 +8,30 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Bridger interface {
-	Bridge(ctx context.Context)
+type PriceBridger interface {
+	PriceBridge(ctx context.Context)
 }
 
-type bridge struct {
-	positionMap service.MapInterface
-	chPrice     chan model.Price
+type priceBridge struct {
+	priceMap service.PriceMapInterface
+	chPrice  chan model.Price
 }
 
-func NewBridge(chPrice chan model.Price, positionMap service.MapInterface) Bridger {
-	return &bridge{
-		chPrice:     chPrice,
-		positionMap: positionMap,
+func NewPriceBridge(chPrice chan model.Price, priceMap service.PriceMapInterface) PriceBridger {
+	return &priceBridge{
+		chPrice:  chPrice,
+		priceMap: priceMap,
 	}
 }
 
-func (b *bridge) Bridge(ctx context.Context) {
+func (p *priceBridge) PriceBridge(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case tmpPrice := <-b.chPrice:
+		case tmpPrice := <-p.chPrice:
 			{
-				writeChanels, err := b.positionMap.GetAllChanForSymb(tmpPrice.Symbol)
+				writeChanels, err := p.priceMap.GetAllChanForSymb(tmpPrice.Symbol)
 				if err != nil {
 					log.Error("can't get chanels via method GetAllChanForSymb:", err)
 					return
