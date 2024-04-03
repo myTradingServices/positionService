@@ -16,7 +16,7 @@ type DBInterface interface {
 	Add(ctx context.Context, position model.Position) error
 	Update(ctx context.Context, position model.Position) error
 	Get(ctx context.Context, id uuid.UUID) ([]model.Position, error)
-	GetAllOpened() []model.Position
+	GetAllOpened(ctx context.Context) ([]model.Position, error)
 	Deleete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -38,8 +38,9 @@ func (r *dbRepo) Get(ctx context.Context, id uuid.UUID) ([]model.Position, error
 	return r.repo.Get(ctx, id)
 }
 
-// TODO: complite
-func (r *dbRepo) GetAllOpened() []model.Position
+func (r *dbRepo) GetAllOpened(ctx context.Context) ([]model.Position, error) {
+	return r.repo.GetAllOpened(ctx)
+}
 
 func (r *dbRepo) Deleete(ctx context.Context, id uuid.UUID) error {
 	return r.repo.Deleete(ctx, id)

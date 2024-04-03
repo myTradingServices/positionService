@@ -34,22 +34,30 @@ func (o *opener) Open(ctx context.Context) {
 		priceCh := make(chan model.Price)
 		totalPnl := decimal.Decimal{}
 
-		defer close(priceCh) //??
-		defer close(posCh)   //??
+		defer close(priceCh) //\\
+		defer close(posCh)
 
 		for {
 			select {
 			case p := <-posCh:
 				{
-					opPrice[p.Symbol] = model.Position{
-						OpenPrice: p.OpenPrice,
-						Long:      p.Long,
-					}
+					if !p.OpenPrice.IsZero() {
+						opPrice[p.Symbol] = model.Position{
+							OpenPrice: p.OpenPrice,
+							Long:      p.Long,
+						}
 
-					o.priceMap.Add(model.SymbOperDTO{
-						Symbol: p.Symbol,
-						UserID: p.UserID.String(),
-					}, priceCh)
+						o.priceMap.Add(model.SymbOperDTO{
+							Symbol: p.Symbol,
+							UserID: p.UserID.String(),
+						}, priceCh)
+					} else {
+						o.priceMap.Delete(model.SymbOperDTO{
+							Symbol: p.Symbol,
+							UserID: userID,
+						})
+						delete(opPrice, p.Symbol)
+					}
 				}
 			default:
 			}
@@ -78,7 +86,12 @@ func (o *opener) Open(ctx context.Context) {
 		}
 	}
 
-	allOpened := o.dbpool.GetAllOpened()
+	allOpened, err := o.dbpool.GetAllOpened(ctx)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
 	for _, opened := range allOpened {
 		tmpCh := make(chan model.Position)
 		o.posMap.Add(opened.UserID.String(), tmpCh) // !NOTE: can combine Add and chanel creation; what's the diff?

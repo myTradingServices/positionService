@@ -34,7 +34,7 @@ func (p *positionBridge) PositionBridge(ctx context.Context) {
 				writeChanel, ok := p.positionMap.Get(tmpPosition.UserID.String())
 				if !ok {
 					log.Error("chanel is not stored")
-					return // ?
+					return
 				}
 
 				select {

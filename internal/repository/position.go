@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mmfshirokan/positionService/internal/model"
+	"github.com/shopspring/decimal"
 )
 
 type postgres struct {
@@ -16,6 +17,7 @@ type DBInterface interface {
 	Add(ctx context.Context, position model.Position) error
 	Deleete(ctx context.Context, id uuid.UUID) error
 	Get(ctx context.Context, id uuid.UUID) ([]model.Position, error)
+	GetAllOpened(ctx context.Context) ([]model.Position, error)
 	Update(ctx context.Context, position model.Position) error
 }
 
@@ -58,6 +60,38 @@ func (p *postgres) Get(ctx context.Context, userID uuid.UUID) (res []model.Posit
 		}
 
 		res = append(res, tmpPos)
+	}
+
+	return res, nil
+}
+
+func (p *postgres) GetAllOpened(ctx context.Context) (res []model.Position, err error) {
+
+	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, symbol, open_price, long) FROM trading.positions WHERE open = true")
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		tmpPos := struct {
+			OperationID uuid.UUID
+			Symbol      string
+			OpenPrice   decimal.Decimal
+			Buy         bool
+		}{}
+
+		if err := rows.Scan(
+			&tmpPos,
+		); err != nil {
+			return nil, err
+		}
+
+		res = append(res, model.Position{
+			OperationID: tmpPos.OperationID,
+			Symbol:      tmpPos.Symbol,
+			OpenPrice:   tmpPos.OpenPrice,
+			Long:        tmpPos.Buy,
+		})
 	}
 
 	return res, nil
