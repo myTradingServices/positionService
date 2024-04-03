@@ -9,6 +9,7 @@ import (
 type PositionMapInterface interface {
 	Add(userID string, ch chan model.Position)
 	Get(userID string) (chan model.Position, bool)
+	Delete(userID string)
 }
 
 type posMap struct {
@@ -34,4 +35,9 @@ func (p *posMap) Get(userID string) (ch chan model.Position, ok bool) {
 	p.mut.RUnlock()
 
 	return
+}
+func (p *posMap) Delete(userID string) {
+	p.mut.Lock()
+	delete(p.pMap, userID)
+	p.mut.Unlock()
 }

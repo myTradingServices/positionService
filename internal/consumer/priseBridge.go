@@ -38,10 +38,7 @@ func (p *priceBridge) PriceBridge(ctx context.Context) {
 				}
 
 				for _, writeChanel := range writeChanels {
-					select {
-					case writeChanel <- tmpPrice:
-					default:
-					}
+					writeChanel <- tmpPrice
 				}
 			}
 		}

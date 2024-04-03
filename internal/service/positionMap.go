@@ -8,6 +8,7 @@ import (
 type PositionMapInterface interface {
 	Add(userID string, ch chan model.Position)
 	Get(userID string) (chan model.Position, bool)
+	Deleete(userID string)
 }
 
 type posMap struct {
@@ -25,4 +26,8 @@ func (p *posMap) Add(userID string, ch chan model.Position) {
 }
 func (p *posMap) Get(userID string) (chan model.Position, bool) {
 	return p.userPosChMap.Get(userID)
+}
+
+func (p *posMap) Deleete(userID string) {
+	p.userPosChMap.Delete(userID)
 }

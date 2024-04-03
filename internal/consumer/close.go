@@ -5,6 +5,7 @@ import (
 
 	"github.com/mmfshirokan/positionService/internal/model"
 	"github.com/mmfshirokan/positionService/internal/service"
+	log "github.com/sirupsen/logrus"
 )
 
 type closer struct {
@@ -34,12 +35,12 @@ func (c *closer) Close(ctx context.Context) {
 			{
 				ch, ok := c.posMap.Get(pos.UserID.String())
 				if !ok {
-					panic("Fatal error closing chanel for position that does not exist")
+					log.Infof("Position with symbol: %v, for user: %v are alredy closed", pos.Symbol, pos.UserID)
+					continue
 				}
 
 				ch <- pos
 			}
-		default:
 		}
 	}
 }
