@@ -16,10 +16,13 @@ type postgres struct {
 type DBInterface interface {
 	Add(ctx context.Context, position model.Position) error
 	Deleete(ctx context.Context, id uuid.UUID) error
+	Update(ctx context.Context, position model.Position) error
+
 	Get(ctx context.Context, id uuid.UUID) ([]model.Position, error)
 	GetAllOpened(ctx context.Context) ([]model.Position, error)
-	Update(ctx context.Context, position model.Position) error
 }
+
+//
 
 func NewPostgresRepository(conn *pgxpool.Pool) DBInterface {
 	return &postgres{
@@ -67,17 +70,17 @@ func (p *postgres) Get(ctx context.Context, userID uuid.UUID) (res []model.Posit
 
 func (p *postgres) GetAllOpened(ctx context.Context) (res []model.Position, err error) {
 
-	rows, err := p.dbpool.Query(ctx, "SELECT (operation_id, symbol, open_price, long) FROM trading.positions WHERE open = true")
+	rows, err := p.dbpool.Query(ctx, "SELECT (user_id, symbol, open_price, long) FROM trading.positions WHERE close_price IS NULL")
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
 		tmpPos := struct {
-			OperationID uuid.UUID
-			Symbol      string
-			OpenPrice   decimal.Decimal
-			Buy         bool
+			UserID    uuid.UUID
+			Symbol    string
+			OpenPrice decimal.Decimal
+			Buy       bool
 		}{}
 
 		if err := rows.Scan(
@@ -87,10 +90,10 @@ func (p *postgres) GetAllOpened(ctx context.Context) (res []model.Position, err 
 		}
 
 		res = append(res, model.Position{
-			OperationID: tmpPos.OperationID,
-			Symbol:      tmpPos.Symbol,
-			OpenPrice:   tmpPos.OpenPrice,
-			Long:        tmpPos.Buy,
+			UserID:    tmpPos.UserID,
+			Symbol:    tmpPos.Symbol,
+			OpenPrice: tmpPos.OpenPrice,
+			Long:      tmpPos.Buy,
 		})
 	}
 

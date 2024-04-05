@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -56,43 +57,52 @@ func (p *postgresListen) Listen(ctx context.Context) {
 			return
 		}
 
-		if nontification.Channel == "positionOpen" {
-			tmpModel := struct {
-				Symbol    string
-				UserID    uuid.UUID
-				OpenPrice decimal.Decimal
-				Long      bool
-			}{}
-
-			err = json.Unmarshal([]byte(nontification.Payload), &tmpModel)
-			if err != nil {
-				log.Error("Error unmarshalling notification:", err)
-			}
-
-			p.openCh <- model.Position{
-				Symbol:    tmpModel.Symbol,
-				UserID:    tmpModel.UserID,
-				OpenPrice: tmpModel.OpenPrice,
-				Long:      tmpModel.Long,
-			}
-			continue
-		}
-
 		tmpModel := struct {
-			Symbol    string
-			UserID    uuid.UUID
-			OpenPrice decimal.Decimal
+			Symbol     string    `json:"symbol"`
+			UserID     uuid.UUID `json:"user_id"`
+			OpenPrice  string    `json:"open_price"`
+			ClosePrice string    `json:"close_price"`
+			Long       string    `json:"long"`
 		}{}
 
 		err = json.Unmarshal([]byte(nontification.Payload), &tmpModel)
 		if err != nil {
 			log.Error("Error unmarshalling notification:", err)
+			return
+		}
+
+		if nontification.Channel == "positionopen" {
+			tmpOpPrice, err := decimal.NewFromString(tmpModel.OpenPrice)
+			if err != nil {
+				log.Error("Parsing string into decimal error:", err)
+				return
+			}
+
+			tmpLong, err := strconv.ParseBool(tmpModel.Long)
+			if err != nil {
+				log.Error("Parsing string into bool error:", err)
+				return
+			}
+
+			p.openCh <- model.Position{
+				Symbol:    tmpModel.Symbol,
+				UserID:    tmpModel.UserID,
+				OpenPrice: tmpOpPrice,
+				Long:      tmpLong,
+			}
+			continue
+		}
+
+		tmpClPrice, err := decimal.NewFromString(tmpModel.ClosePrice)
+		if err != nil {
+			log.Error("Parsing string into decimal error:", err)
+			return
 		}
 
 		p.closeCh <- model.Position{
-			Symbol:    tmpModel.Symbol,
-			UserID:    tmpModel.UserID,
-			OpenPrice: tmpModel.OpenPrice,
+			Symbol:     tmpModel.Symbol,
+			UserID:     tmpModel.UserID,
+			ClosePrice: tmpClPrice,
 		}
 	}
 

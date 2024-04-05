@@ -9,6 +9,7 @@ import (
 type PositionMapInterface interface {
 	Add(userID string, ch chan model.Position)
 	Get(userID string) (chan model.Position, bool)
+
 	Delete(userID string)
 }
 

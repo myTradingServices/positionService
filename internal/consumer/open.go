@@ -164,6 +164,5 @@ func computePNL(openPrice decimal.Decimal, currentPrice model.Price, long bool) 
 	if long {
 		return currentPrice.Ask.Add(openPrice.Neg())
 	}
-
 	return openPrice.Add(currentPrice.Bid.Neg())
 }

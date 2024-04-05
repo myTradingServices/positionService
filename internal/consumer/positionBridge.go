@@ -14,12 +14,12 @@ type PositionBridger interface {
 
 type positionBridge struct {
 	positionMap service.PositionMapInterface
-	openCh      chan model.Position
+	chPosition  chan model.Position
 }
 
 func NewPositionBridge(chPosition chan model.Position, positionMap service.PositionMapInterface) PositionBridger {
 	return &positionBridge{
-		openCh:      chPosition,
+		chPosition:  chPosition,
 		positionMap: positionMap,
 	}
 }
@@ -29,7 +29,7 @@ func (p *positionBridge) PositionBridge(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case tmpPosition := <-p.openCh:
+		case tmpPosition := <-p.chPosition:
 			{
 				writeChanel, ok := p.positionMap.Get(tmpPosition.UserID.String())
 				if !ok {

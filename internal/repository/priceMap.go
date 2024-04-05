@@ -12,8 +12,11 @@ var (
 )
 
 type PriceMapInterface interface {
-	GetAllChanForSymb(symb string) ([]chan model.Price, error)
-	GetOrCreate(key model.SymbOperDTO) (chan model.Price, bool)
+	GetAllChanForSymb(symb string) (res []chan model.Price, err error)
+	Get(key model.SymbOperDTO) chan model.Price
+
+	Add(key model.SymbOperDTO, ch chan model.Price)
+	Delete(key model.SymbOperDTO)
 }
 
 type symbUserPrice struct {
@@ -27,14 +30,30 @@ func NewSymbOperMap(symbUserMap map[string]map[string]chan model.Price) PriceMap
 	}
 }
 
-func (s *symbUserPrice) GetOrCreate(key model.SymbOperDTO) (ch chan model.Price, ok bool) {
+func (s *symbUserPrice) GetAllChanForSymb(symb string) (res []chan model.Price, _ error) {
 	s.mut.RLock()
-	_, ok = s.symbUserMap[key.Symbol]
+	defer s.mut.RUnlock()
+
+	chMap, ok := s.symbUserMap[symb]
+
+	if !ok {
+		return nil, ErrGetElementThatNotExist
+	}
+
+	for _, val := range chMap {
+		res = append(res, val)
+	}
+
+	return res, nil
+}
+
+func (s *symbUserPrice) Add(key model.SymbOperDTO, ch chan model.Price) {
+	s.mut.RLock()
+	_, ok := s.symbUserMap[key.Symbol]
 	s.mut.RUnlock()
 
 	if !ok {
 		underlying := make(map[string]chan model.Price)
-		ch = make(chan model.Price)
 		underlying[key.UserID] = ch
 
 		s.mut.Lock()
@@ -44,29 +63,27 @@ func (s *symbUserPrice) GetOrCreate(key model.SymbOperDTO) (ch chan model.Price,
 		return
 	}
 
-	s.mut.RLock()
-	ch, ok = s.symbUserMap[key.Symbol][key.UserID]
-	s.mut.RUnlock()
-	if ok {
-		return
-	}
+	s.mut.Lock()
+	s.symbUserMap[key.Symbol][key.UserID] = ch
+	s.mut.Unlock()
+}
+func (s *symbUserPrice) Get(key model.SymbOperDTO) chan model.Price {
+	s.mut.Lock()
+	ch := s.symbUserMap[key.Symbol][key.UserID]
+	s.mut.Unlock()
 
-	ch = make(chan model.Price)
-	return
+	return ch
 }
 
-func (s *symbUserPrice) GetAllChanForSymb(symb string) (res []chan model.Price, _ error) {
+func (s *symbUserPrice) Delete(key model.SymbOperDTO) {
 	s.mut.RLock()
-	chMap, ok := s.symbUserMap[symb]
-	if !ok {
-		s.mut.RUnlock()
-		return nil, ErrGetElementThatNotExist
-	}
-
-	for _, val := range chMap {
-		res = append(res, val)
-	}
+	underlying := s.symbUserMap[key.Symbol]
 	s.mut.RUnlock()
 
-	return res, nil
+	s.mut.Lock()
+	delete(underlying, key.UserID)
+	if len(underlying) == 0 {
+		delete(s.symbUserMap, key.Symbol)
+	}
+	s.mut.Unlock()
 }

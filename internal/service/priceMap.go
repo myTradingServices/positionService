@@ -27,11 +27,12 @@ func (s *priceMap) GetAllChanForSymb(symb string) (res []chan model.Price, _ err
 }
 
 func (s *priceMap) Add(key model.SymbOperDTO, ch chan model.Price) {
-
+	s.repo.Add(key, ch)
 }
 func (s *priceMap) Get(key model.SymbOperDTO) chan model.Price {
-	return nil
+	return s.Get(key)
 }
 
 func (s *priceMap) Delete(key model.SymbOperDTO) {
+	s.repo.Delete(key)
 }

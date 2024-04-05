@@ -5,21 +5,25 @@ CREATE TABLE trading.positions (
     open_price decimal,
     close_price decimal,
     created_at timestamp WITH time zone DEFAULT NOW(),
-    long boolean,
+    long boolean
 );
 
 CREATE FUNCTION capture_func() 
 RETURNS trigger AS 
-$$ 
-BEGIN 
+$$
+DECLARE
+  payload json;
+BEGIN
     IF (TG_OP = 'INSERT') THEN
+		payload = format('{"symbol":"%s","user_id":"%s","open_price":"%s","long":"%s"}', NEW.symbol, NEW.user_id, NEW.open_price, NEW.long);
         RAISE NOTICE '%', 'NOTIFY on INSERT';
-        PERFORM pg_notify('positionOpen',  '{"symbol":"'|| NEW.symbol::text ||  '","user_id":"' || NEW.user_id::text ||'","open_price":"' || NEW.open_price::text || '","long":' || NEW.buy::text || '"}'); 
+        EXECUTE FORMAT('NOTIFY positionOpen, ''%s''', payload);
         RETURN NEW;
     ELSE
+		payload = format('{"symbol":"%s","user_id":"%s","close_price":"%s"}', NEW.symbol, NEW.user_id, NEW.close_price);
         RAISE NOTICE '%', 'NOTIFY on UPDATE';
-        PERFORM pg_notify('positionClose', '{"symbol":"'|| NEW.symbol::text || '","user_id":"' || NEW.user_id::text || '","close_price":"' || NEW.close_price::text || '"}'); 
-        RETURN NEW;
+        EXECUTE FORMAT('NOTIFY positionClose, ''%s''', payload);
+		RETURN NEW;
     END IF;
 END;
 $$ LANGUAGE 'plpgsql';
