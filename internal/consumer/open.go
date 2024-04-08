@@ -15,32 +15,33 @@ type Opener interface {
 }
 
 type opener struct {
-	positionsCH service.PositionMapInterface
-	pricesCH    service.PriceMapInterface
+	localPositions service.LPstController
+	prices         service.PrcManipulator
+	positions      service.PstController
 
-	dbpool  service.DBInterface
 	lisenCh chan model.Position
 }
 
 func NewOpener(
-	positionsCH service.PositionMapInterface,
-	pricesCH service.PriceMapInterface,
-	dbPool service.DBInterface,
-	lisenCh chan model.Position) Opener {
+	localPositions *service.LocalPositions,
+	prices *service.Prices,
+	positions *service.Positons,
+	lisenCh chan model.Position,
+) Opener {
 	return &opener{
-		positionsCH: positionsCH,
-		pricesCH:    pricesCH,
-		dbpool:      dbPool,
-		lisenCh:     lisenCh,
+		localPositions: localPositions,
+		prices:         prices,
+		positions:      positions,
+		lisenCh:        lisenCh,
 	}
 }
 
 func (o *opener) Open(ctx context.Context) {
 
 	consumerCore := func(posCh chan model.Position, userID string) {
-		pricesForPNL := make(map[string]model.Position)
+		pnlPrices := make(map[string]model.Position)
 		priceCh := make(chan model.Price)
-		totalPnl := decimal.Decimal{}
+		totalPNL := decimal.Decimal{}
 
 		defer func() {
 			defer close(priceCh)
@@ -53,37 +54,37 @@ func (o *opener) Open(ctx context.Context) {
 			case p := <-posCh:
 				{
 					if p.ClosePrice.IsZero() {
-						pricesForPNL[p.Symbol] = model.Position{
+						pnlPrices[p.Symbol] = model.Position{
 							OpenPrice: p.OpenPrice,
 							Long:      p.Long,
 						}
-						o.pricesCH.Add(model.SymbOperDTO{
+						o.prices.Add(model.SymbOperDTO{
 							Symbol: p.Symbol,
 							UserID: p.UserID.String(),
 						}, priceCh)
 
 					} else {
-						o.pricesCH.Delete(model.SymbOperDTO{
+						o.prices.Delete(model.SymbOperDTO{
 							Symbol: p.Symbol,
 							UserID: userID,
 						})
-						delete(pricesForPNL, p.Symbol)
+						delete(pnlPrices, p.Symbol)
 					}
 				}
 			case p := <-priceCh:
 				{
-					pnl := computePNL(pricesForPNL[p.Symbol].OpenPrice, p, pricesForPNL[p.Symbol].Long)
+					pnl := computePNL(pnlPrices[p.Symbol].OpenPrice, p, pnlPrices[p.Symbol].Long)
 
-					if pricesForPNL[p.Symbol].Long {
-						opTmp := pricesForPNL[p.Symbol].OpenPrice
-						pricesForPNL[p.Symbol] = model.Position{
-							OpenPrice:  opTmp,
+					if pnlPrices[p.Symbol].Long {
+						openP := pnlPrices[p.Symbol].OpenPrice
+						pnlPrices[p.Symbol] = model.Position{
+							OpenPrice:  openP,
 							Long:       true,
 							ClosePrice: p.Ask,
 						}
 					} else {
-						opTmp := pricesForPNL[p.Symbol].OpenPrice
-						pricesForPNL[p.Symbol] = model.Position{
+						opTmp := pnlPrices[p.Symbol].OpenPrice
+						pnlPrices[p.Symbol] = model.Position{
 							OpenPrice:  opTmp,
 							Long:       true,
 							ClosePrice: p.Ask,
@@ -96,13 +97,13 @@ func (o *opener) Open(ctx context.Context) {
 						"PNL: ":    pnl,
 					}).Info("Profit and loss info")
 
-					if totalPnl = totalPnl.Add(pnl); totalPnl.IsNegative() { // close all popsirion // exit go rutine
+					if totalPNL = totalPNL.Add(pnl); totalPNL.IsNegative() { // close all popsirion // exit go rutine
 						log.Info("Warning proffit is less than thero, closing all positions for user: ", userID)
 
-						o.positionsCH.Deleete(userID)
+						o.localPositions.Deleete(userID)
 
-						for symb, pos := range pricesForPNL {
-							err := o.dbpool.Update(ctx, model.Position{
+						for symb, pos := range pnlPrices {
+							err := o.positions.Update(ctx, model.Position{
 								UserID:     uuid.MustParse(userID),
 								Symbol:     symb,
 								ClosePrice: pos.ClosePrice,
@@ -126,16 +127,16 @@ func (o *opener) Open(ctx context.Context) {
 		}
 	}
 
-	allOpened, err := o.dbpool.GetAllOpened(ctx)
+	allOpened, err := o.positions.GetAllOpened(ctx)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	for _, opened := range allOpened {
-		tmpCh := make(chan model.Position)
-		o.positionsCH.Add(opened.UserID.String(), tmpCh)
-		go consumerCore(tmpCh, opened.UserID.String())
+		posCh := make(chan model.Position)
+		o.localPositions.Add(opened.UserID.String(), posCh)
+		go consumerCore(posCh, opened.UserID.String())
 	}
 
 	for {
@@ -147,14 +148,14 @@ func (o *opener) Open(ctx context.Context) {
 			}
 		case pos := <-o.lisenCh:
 			{
-				if ch, ok := o.positionsCH.Get(pos.UserID.String()); ok {
+				if ch, ok := o.localPositions.Get(pos.UserID.String()); ok {
 					go consumerCore(ch, pos.UserID.String())
 					continue
 				}
 
-				tmpCh := make(chan model.Position)
-				o.positionsCH.Add(pos.UserID.String(), tmpCh)
-				go consumerCore(tmpCh, pos.UserID.String())
+				posCh := make(chan model.Position)
+				o.localPositions.Add(pos.UserID.String(), posCh)
+				go consumerCore(posCh, pos.UserID.String())
 			}
 		}
 	}

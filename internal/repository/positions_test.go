@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	conn DBInterface
+	conn *Postgres
 
 	input1 = model.Position{
 		OperationID: uuid.New(),
@@ -125,7 +125,7 @@ func TestMain(m *testing.M) {
 	)
 
 	pool.MaxWait = 120 * time.Second
-	conn = NewPostgresRepository(dbpool)
+	conn = NewPosition(dbpool)
 
 	openCh = make(chan model.Position)
 	closeCh = make(chan model.Position)
@@ -134,10 +134,10 @@ func TestMain(m *testing.M) {
 	time.Sleep(time.Second)
 
 	positionMapForTesting = make(map[string]chan model.Position)
-	posMapConn = NewPositionMap(positionMapForTesting)
+	posMapConn = NewLocalPosition(positionMapForTesting)
 
 	priceMapForTesting = make(map[string]map[string]chan model.Price)
-	priceMapConn = NewSymbOperMap(priceMapForTesting)
+	priceMapConn = NewPrices(priceMapForTesting)
 
 	code := m.Run()
 

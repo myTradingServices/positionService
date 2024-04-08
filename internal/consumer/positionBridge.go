@@ -13,14 +13,14 @@ type PositionBridger interface {
 }
 
 type positionBridge struct {
-	positionMap service.PositionMapInterface
-	chPosition  chan model.Position
+	localPositions service.LPstGeter
+	ch             chan model.Position
 }
 
-func NewPositionBridge(chPosition chan model.Position, positionMap service.PositionMapInterface) PositionBridger {
+func NewPositionBridge(ch chan model.Position, positionMap *service.LocalPositions) PositionBridger {
 	return &positionBridge{
-		chPosition:  chPosition,
-		positionMap: positionMap,
+		ch:             ch,
+		localPositions: positionMap,
 	}
 }
 
@@ -29,15 +29,15 @@ func (p *positionBridge) PositionBridge(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case tmpPosition := <-p.chPosition:
+		case pst := <-p.ch:
 			{
-				writeChanel, ok := p.positionMap.Get(tmpPosition.UserID.String())
+				writeTo, ok := p.localPositions.Get(pst.UserID.String())
 				if !ok {
 					log.Error("chanel is not stored")
 					return
 				}
 
-				writeChanel <- tmpPosition
+				writeTo <- pst
 			}
 		}
 	}

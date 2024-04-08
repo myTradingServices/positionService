@@ -11,7 +11,7 @@ import (
 
 var (
 	positionMapForTesting map[string]chan model.Position
-	posMapConn            PositionMapInterface
+	posMapConn            *Positions
 
 	posMapInputValue1 = make(chan model.Position)
 	posMapInputValue2 = make(chan model.Position)

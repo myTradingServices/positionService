@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	priceMapConn       PriceMapInterface
+	priceMapConn       *Prices
 	priceMapForTesting map[string]map[string]chan model.Price
 
 	priceMapInputValue1 = make(chan model.Price)
@@ -98,10 +98,10 @@ func TestPriceMapAdd(t *testing.T) {
 func TestGetAllChanForSymb(t *testing.T) {
 
 	type T struct {
-		name     string
-		symb     string
-		expected []chan model.Price
-		hasError bool
+		name          string
+		symb          string
+		expected      []chan model.Price
+		isSuccessfull bool
 	}
 
 	testTable := []T{
@@ -113,7 +113,7 @@ func TestGetAllChanForSymb(t *testing.T) {
 				priceMapInputValue4,
 				priceMapInputValue5,
 			},
-			hasError: false,
+			isSuccessfull: true,
 		},
 		{
 			name: "standart input-2",
@@ -121,7 +121,7 @@ func TestGetAllChanForSymb(t *testing.T) {
 			expected: []chan model.Price{
 				priceMapInputValue2,
 			},
-			hasError: false,
+			isSuccessfull: true,
 		},
 		{
 			name: "standart input-3",
@@ -129,13 +129,13 @@ func TestGetAllChanForSymb(t *testing.T) {
 			expected: []chan model.Price{
 				priceMapInputValue3,
 			},
-			hasError: false,
+			isSuccessfull: true,
 		},
 		{
-			name:     "error input",
-			symb:     "symb69",
-			expected: nil,
-			hasError: true,
+			name:          "error input",
+			symb:          "symb69",
+			expected:      nil,
+			isSuccessfull: false,
 		},
 	}
 
@@ -147,15 +147,13 @@ func TestGetAllChanForSymb(t *testing.T) {
 			wg.Add(1)
 			go func(test T, lp int) {
 				defer wg.Done()
-				actual, err := priceMapConn.GetAllChanForSymb(test.symb)
+				actual, ok := priceMapConn.GetAllChanForSymb(test.symb)
 				testMsg := fmt.Sprint(test.name, " loop-", lp)
-				if test.hasError {
-					assert.Error(t, err, testMsg)
+
+				assert.Equal(t, test.isSuccessfull, ok, testMsg)
+
+				if !test.isSuccessfull {
 					assert.Nil(t, actual, testMsg)
-					return
-				}
-				ok := assert.Nil(t, err, testMsg)
-				if !ok {
 					return
 				}
 				assert.ElementsMatch(t, test.expected, actual, testMsg)
@@ -223,7 +221,7 @@ func TestPriceMapGet(t *testing.T) {
 		wg.Add(1)
 		go func(test T) {
 			defer wg.Done()
-			actual := priceMapConn.Get(test.key)
+			actual, _ := priceMapConn.Get(test.key) // TODO: Add okay test case
 			assert.Equal(t, test.expected, actual, test.name)
 		}(testCase)
 	}

@@ -9,7 +9,7 @@ import (
 )
 
 type closer struct {
-	posMap  service.PositionMapInterface
+	posMap  service.LPstGeter
 	closeCh chan model.Position
 }
 
@@ -17,7 +17,7 @@ type Closer interface {
 	Close(ctx context.Context)
 }
 
-func NewCloser(posMap service.PositionMapInterface, closeCh chan model.Position, priceMap service.PriceMapInterface) Closer {
+func NewCloser(posMap *service.LocalPositions, closeCh chan model.Position, priceMap service.PrcManipulator) Closer {
 	return &closer{
 		posMap:  posMap,
 		closeCh: closeCh,

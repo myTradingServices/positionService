@@ -13,11 +13,11 @@ type PriceBridger interface {
 }
 
 type priceBridge struct {
-	priceMap service.PriceMapInterface
+	priceMap service.PrcGeter
 	chPrice  chan model.Price
 }
 
-func NewPriceBridge(chPrice chan model.Price, priceMap service.PriceMapInterface) PriceBridger {
+func NewPriceBridge(chPrice chan model.Price, priceMap *service.Prices) PriceBridger {
 	return &priceBridge{
 		chPrice:  chPrice,
 		priceMap: priceMap,
@@ -29,16 +29,16 @@ func (p *priceBridge) PriceBridge(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case tmpPrice := <-p.chPrice:
+		case prc := <-p.chPrice:
 			{
-				writeChanels, err := p.priceMap.GetAllChanForSymb(tmpPrice.Symbol)
-				if err != nil {
-					log.Error("can't get chanels via method GetAllChanForSymb:", err)
+				writeTo, ok := p.priceMap.GetAllChanForSymb(prc.Symbol)
+				if !ok {
+					log.Error("can't get chanels via method GetAllChanForSymb:", ok)
 					return
 				}
 
-				for _, writeChanel := range writeChanels {
-					writeChanel <- tmpPrice
+				for _, writeChanel := range writeTo {
+					writeChanel <- prc
 				}
 			}
 		}
