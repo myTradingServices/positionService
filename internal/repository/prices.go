@@ -6,14 +6,6 @@ import (
 	"github.com/mmfshirokan/positionService/internal/model"
 )
 
-// type PriceMapInterface interface {
-// 	GetAllChanForSymb(symb string) (res []chan model.Price, err error)
-// 	Get(key model.SymbOperDTO) chan model.Price
-
-// 	Add(key model.SymbOperDTO, ch chan model.Price)
-// 	Delete(key model.SymbOperDTO)
-// }
-
 type Prices struct {
 	prc map[string]map[string]chan model.Price
 	mut sync.RWMutex

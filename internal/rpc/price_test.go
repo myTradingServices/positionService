@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"os"
+
 	"strconv"
 	"testing"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/mmfshirokan/positionService/proto/pb"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -25,7 +27,7 @@ const (
 
 var (
 	priceCh   chan model.Price
-	priceRecv Reciver
+	priceRecv *PriceRPC
 	posWr     pb.PositionClient
 
 	testLastPrice1 = model.Price{

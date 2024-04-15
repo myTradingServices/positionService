@@ -11,25 +11,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-type priceServer struct {
+type PriceRPC struct {
 	client  pb.ConsumerClient
 	chPrice chan model.Price
 }
 
-type Reciver interface {
-	ReciveStream(ctx context.Context)
-	ReciveLast(ctx context.Context, symb string) (model.Price, error)
-}
-
-func NewPriceServer(connecion *grpc.ClientConn, chPrice chan model.Price) Reciver {
+func NewPriceServer(connecion *grpc.ClientConn, chPrice chan model.Price) *PriceRPC {
 	client := pb.NewConsumerClient(connecion)
-	return &priceServer{
+	return &PriceRPC{
 		client:  client,
 		chPrice: chPrice,
 	}
 }
 
-func (p *priceServer) ReciveStream(ctx context.Context) {
+func (p *PriceRPC) ReciveStream(ctx context.Context) {
 	stream, err := p.client.DataStream(ctx, &pb.RequestDataStream{Start: true})
 	if err != nil {
 		log.Errorf("Error in DataStream: %v", err)
@@ -56,7 +51,7 @@ func (p *priceServer) ReciveStream(ctx context.Context) {
 	}
 }
 
-func (p *priceServer) ReciveLast(ctx context.Context, symb string) (model.Price, error) {
+func (p *PriceRPC) ReciveLast(ctx context.Context, symb string) (model.Price, error) {
 	recv, err := p.client.GetLastPrice(ctx, &pb.RequestGetLastPrice{
 		Symbol: symb,
 	})

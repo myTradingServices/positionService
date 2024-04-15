@@ -9,16 +9,7 @@ type Prices struct {
 	repo *repository.Prices
 }
 
-type PrcGeter interface {
-	GetAllChanForSymb(symb string) (chanels []chan model.Price, isSuccessfull bool)
-}
-
-type PrcManipulator interface {
-	Add(key model.SymbOperDTO, ch chan model.Price)
-	Delete(key model.SymbOperDTO) (wasDeleted bool)
-}
-
-func NewSymbOperMap(repo *repository.Prices) *Prices {
+func NewPrices(repo *repository.Prices) *Prices {
 	return &Prices{
 		repo: repo,
 	}

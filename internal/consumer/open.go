@@ -5,40 +5,51 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mmfshirokan/positionService/internal/model"
-	"github.com/mmfshirokan/positionService/internal/service"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
 
-type Opener interface {
-	Open(ctx context.Context)
-}
-
-type opener struct {
-	localPositions service.LPstController
-	prices         service.PrcManipulator
-	positions      service.PstController
+type Open struct {
+	positions PositionController
+	localPos  LPositionController
+	prices    PriceManipulator
 
 	lisenCh chan model.Position
 }
 
+type PositionController interface {
+	Update(ctx context.Context, position model.Position) error
+	GetAllOpened(ctx context.Context) ([]model.Position, error)
+}
+
+type LPositionController interface {
+	Add(userID string, ch chan model.Position)
+	Deleete(userID string) (wasDeleted bool)
+	Get(userID string) (chan model.Position, bool)
+}
+
+type PriceManipulator interface {
+	Add(key model.SymbOperDTO, ch chan model.Price)
+	Delete(key model.SymbOperDTO) (wasDeleted bool)
+}
+
 func NewOpener(
-	localPositions *service.LocalPositions,
-	prices *service.Prices,
-	positions *service.Positons,
+	localPositions LPositionController,
+	prices PriceManipulator,
+	positions PositionController,
 	lisenCh chan model.Position,
-) Opener {
-	return &opener{
-		localPositions: localPositions,
-		prices:         prices,
-		positions:      positions,
-		lisenCh:        lisenCh,
+) *Open {
+	return &Open{
+		localPos:  localPositions,
+		prices:    prices,
+		positions: positions,
+		lisenCh:   lisenCh,
 	}
 }
 
-func (o *opener) Open(ctx context.Context) {
+func (o *Open) Open(ctx context.Context) {
 
-	consumerCore := func(posCh chan model.Position, userID string) {
+	consume := func(posCh chan model.Position, userID string) {
 		pnlPrices := make(map[string]model.Position)
 		priceCh := make(chan model.Price)
 		totalPNL := decimal.Decimal{}
@@ -92,15 +103,15 @@ func (o *opener) Open(ctx context.Context) {
 					}
 
 					log.WithFields(log.Fields{
-						"UserID: ": userID,
-						"Symbol: ": p.Symbol,
-						"PNL: ":    pnl,
+						"UserID": userID,
+						"Symbol": p.Symbol,
+						"PNL":    pnl,
 					}).Info("Profit and loss info")
 
 					if totalPNL = totalPNL.Add(pnl); totalPNL.IsNegative() { // close all popsirion // exit go rutine
 						log.Info("Warning proffit is less than thero, closing all positions for user: ", userID)
 
-						o.localPositions.Deleete(userID)
+						o.localPos.Deleete(userID)
 
 						for symb, pos := range pnlPrices {
 							err := o.positions.Update(ctx, model.Position{
@@ -118,6 +129,11 @@ func (o *opener) Open(ctx context.Context) {
 								).Error("Can't close position")
 								continue
 							}
+
+							o.prices.Delete(model.SymbOperDTO{
+								Symbol: symb,
+								UserID: userID,
+							})
 						}
 
 						return
@@ -135,8 +151,11 @@ func (o *opener) Open(ctx context.Context) {
 
 	for _, opened := range allOpened {
 		posCh := make(chan model.Position)
-		o.localPositions.Add(opened.UserID.String(), posCh)
-		go consumerCore(posCh, opened.UserID.String())
+		o.localPos.Add(opened.UserID.String(), posCh)
+
+		go consume(posCh, opened.UserID.String())
+
+		posCh <- opened
 	}
 
 	for {
@@ -148,14 +167,18 @@ func (o *opener) Open(ctx context.Context) {
 			}
 		case pos := <-o.lisenCh:
 			{
-				if ch, ok := o.localPositions.Get(pos.UserID.String()); ok {
-					go consumerCore(ch, pos.UserID.String())
+				ch, ok := o.localPos.Get(pos.UserID.String())
+				if !ok {
+					posCh := make(chan model.Position)
+					o.localPos.Add(pos.UserID.String(), posCh)
+
+					go consume(posCh, pos.UserID.String())
+
+					posCh <- pos
 					continue
 				}
 
-				posCh := make(chan model.Position)
-				o.localPositions.Add(pos.UserID.String(), posCh)
-				go consumerCore(posCh, pos.UserID.String())
+				ch <- pos
 			}
 		}
 	}

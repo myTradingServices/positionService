@@ -9,15 +9,15 @@ type LocalPositions struct {
 	pst *repository.Positions
 }
 
-type LPstGeter interface {
-	Get(userID string) (chan model.Position, bool)
-}
+// type LPositionGeter interface {
+// 	Get(userID string) (chan model.Position, bool)
+// }
 
-type LPstController interface {
-	LPstGeter
-	Add(userID string, ch chan model.Position)
-	Deleete(userID string) (wasDeleted bool)
-}
+// type LPositionController interface {
+// 	LPositionGeter
+// 	Add(userID string, ch chan model.Position)
+// 	Deleete(userID string) (wasDeleted bool)
+// }
 
 func NewLocalPositions(pst *repository.Positions) *LocalPositions {
 	return &LocalPositions{

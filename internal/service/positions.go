@@ -11,16 +11,6 @@ type Positons struct {
 	repo *repository.Postgres
 }
 
-type PstManipulator interface {
-	Add(ctx context.Context, position model.Position) error
-	Update(ctx context.Context, position model.Position) error
-}
-
-type PstController interface {
-	PstManipulator
-	GetAllOpened(ctx context.Context) ([]model.Position, error)
-}
-
 func NewPosition(repo *repository.Postgres) *Positons {
 	return &Positons{
 		repo: repo,

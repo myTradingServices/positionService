@@ -4,42 +4,30 @@ import (
 	"context"
 
 	"github.com/mmfshirokan/positionService/internal/model"
-	"github.com/mmfshirokan/positionService/internal/service"
-	log "github.com/sirupsen/logrus"
 )
 
-type closer struct {
-	posMap  service.LPstGeter
-	closeCh chan model.Position
+type Close struct {
+	posBridgeCh chan model.Position
+	lisCloseCh  chan model.Position
 }
 
-type Closer interface {
-	Close(ctx context.Context)
-}
-
-func NewCloser(posMap *service.LocalPositions, closeCh chan model.Position, priceMap service.PrcManipulator) Closer {
-	return &closer{
-		posMap:  posMap,
-		closeCh: closeCh,
+func NewCloser(closeChanel chan model.Position, positionBridgeChanel chan model.Position) *Close {
+	return &Close{
+		posBridgeCh: positionBridgeChanel,
+		lisCloseCh:  closeChanel,
 	}
 }
 
-func (c *closer) Close(ctx context.Context) {
+func (c *Close) Close(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			{
 				return
 			}
-		case pos := <-c.closeCh:
+		case pos := <-c.lisCloseCh:
 			{
-				ch, ok := c.posMap.Get(pos.UserID.String())
-				if !ok {
-					log.Infof("Position with symbol: %v, for user: %v are alredy closed", pos.Symbol, pos.UserID)
-					continue
-				}
-
-				ch <- pos
+				c.posBridgeCh <- pos
 			}
 		}
 	}

@@ -5,24 +5,28 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mmfshirokan/positionService/internal/model"
-	"github.com/mmfshirokan/positionService/internal/service"
 	"github.com/mmfshirokan/positionService/proto/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type positionServer struct {
-	db    service.PstManipulator
+	db    PositionManipulator
 	price Reciver
 	pb.UnimplementedPositionServer
 }
 
-type Positioner interface {
-	ClosePosition(ctx context.Context, recv *pb.RequestClosePosition) (*emptypb.Empty, error)
-	OpenPosition(ctx context.Context, recv *pb.RequestOpenPosition) (*emptypb.Empty, error)
+type PositionManipulator interface {
+	Add(ctx context.Context, position model.Position) error
+	Update(ctx context.Context, position model.Position) error
 }
 
-func NewPositionServer(db service.PstManipulator, price Reciver) pb.PositionServer {
+type Reciver interface {
+	ReciveStream(ctx context.Context)
+	ReciveLast(ctx context.Context, symb string) (model.Price, error)
+}
+
+func NewPositionServer(db PositionManipulator, price Reciver) pb.PositionServer {
 	return &positionServer{
 		db:    db,
 		price: price,
