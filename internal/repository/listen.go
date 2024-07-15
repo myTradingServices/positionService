@@ -12,17 +12,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Listener interface {
-	Listen(ctx context.Context)
-}
-
 type postgresListen struct {
 	dbpool  *pgxpool.Pool
 	openCh  chan model.Position
 	closeCh chan model.Position
 }
 
-func NewPgListen(openCh chan model.Position, closeCh chan model.Position, dbpool *pgxpool.Pool) Listener {
+func NewPgListen(openCh chan model.Position, closeCh chan model.Position, dbpool *pgxpool.Pool) *postgresListen {
 	return &postgresListen{
 		dbpool:  dbpool,
 		openCh:  openCh,
@@ -31,6 +27,9 @@ func NewPgListen(openCh chan model.Position, closeCh chan model.Position, dbpool
 }
 
 func (p *postgresListen) Listen(ctx context.Context) {
+	log.Info("Listen-notify started")
+	defer log.Info("Listen-notify exited")
+
 	conn, err := p.dbpool.Acquire(ctx)
 	if err != nil {
 		log.Error("Error listening to chat channel:", err)

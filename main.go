@@ -1,97 +1,83 @@
 package main
 
-// import (
-// 	"context"
-// 	"net"
+import (
+	"context"
 
-// 	"github.com/jackc/pgx/v5/pgxpool"
-// 	"github.com/mmfshirokan/positionService/internal/config"
-// 	"github.com/mmfshirokan/positionService/internal/model"
-// 	"github.com/mmfshirokan/positionService/internal/repository"
-// 	"github.com/mmfshirokan/positionService/internal/rpc"
-// 	"github.com/mmfshirokan/positionService/internal/service"
-// 	"github.com/mmfshirokan/positionService/proto/pb"
-// 	log "github.com/sirupsen/logrus"
-// 	"google.golang.org/grpc"
-// 	"google.golang.org/grpc/credentials/insecure"
-// )
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mmfshirokan/positionService/internal/config"
+	"github.com/mmfshirokan/positionService/internal/consumer"
+	"github.com/mmfshirokan/positionService/internal/model"
+	"github.com/mmfshirokan/positionService/internal/repository"
+	"github.com/mmfshirokan/positionService/internal/rpc"
+	"github.com/mmfshirokan/positionService/internal/service"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
 
 func main() {
-	// 	ctx, _ := context.WithCancel(context.Background())
+	log.Info("Starting position service")
+	defer log.Info("Position service exited")
 
-	// 	conf, err := config.New()
-	// 	if err != nil {
-	// 		log.Error("Config error:", err)
-	// 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// 	pgxPool, err := pgxpool.New(ctx, conf.PpstgresURI)
-	// 	if err != nil {
-	// 		log.Panic("pgxPool fatal error:", err)
-	// 	}
+	conf, err := config.New()
+	if err != nil {
+		log.Error("Config error:", err)
+		return
+	}
 
-	// 	rpcOptions := grpc.WithTransportCredentials(insecure.NewCredentials())
-	// 	rpcConn, err := grpc.Dial(conf.PpstgresURI, rpcOptions)
-	// 	if err != nil {
-	// 		log.Panic("fail to launch rpc:", err)
-	// 	}
-	// 	defer rpcConn.Close()
+	conn, err := grpc.Dial(
+		conf.PriceProviderURI,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Errorf("grpc connection error on %v: %v", conf.PriceProviderURI, err)
+		return
+	}
+	defer conn.Close()
 
-	// 	symbOperPriceMap := make(map[string]map[string]chan model.Price)
-	// 	symbPriceMap := make(map[string]chan model.Price)
-	// 	operPriceMap := make(map[string]chan model.Price)
+	chPrice := make(chan model.Price)
+	priceServRPC := rpc.NewPriceServer(conn, chPrice)
+	priceData := repository.NewPrices(make(map[string]map[string]chan model.Price))
+	priceDataServ := service.NewPrices(priceData)
 
-	// 	symbOperPriceServ := repository.NewSymbOperMap(symbOperPriceMap)
-	// 	symblPriceServ := repository.NewStringPrice(symbPriceMap)
-	// 	operPriceServ := repository.NewStringPrice(operPriceMap)
+	priceBrdg := consumer.NewPriceBridge(chPrice, priceDataServ)
 
-	// 	dbRepo := repository.NewPostgresRepository(pgxPool)
-	// 	serv := service.NewPositionService(dbRepo)
+	dbpool, err := pgxpool.New(ctx, conf.PostgresURI)
+	if err != nil {
+		log.Errorf("Error occurred while connecting yo postgresql pool: %v", err)
+		return
+	}
+	defer dbpool.Close()
 
-	// 	balanceChan := make(chan model.Position)
+	openCh := make(chan model.Position)
+	closeCh := make(chan model.Position)
 
-	// 	mapper := rpc.NewPricePositionServer(symblPriceServ, symbOperPriceServ, operPriceServ)
-	// 	priceRPC := rpc.NewPriceServer(rpcConn, symblPriceServ)
+	lis := repository.NewPgListen(openCh, closeCh, dbpool)
 
-	// 	positionRPC := rpc.NewPositionServer(symbOperPriceServ, balanceChan, serv)
-	// 	balancerRPC := rpc.NewBalancerServer(balanceChan)
+	posBridger := consumer.NewCloser(closeCh, openCh)
 
-	// 	go positionServerStart(conf.PositionServerURI, positionRPC)
-	// 	go balanceServerStart(conf.BalanceServerURI, balancerRPC)
-	// 	go priceRPC.Recive(ctx)
-	// 	go mapper.Mapper()
-	// }
+	localData := repository.NewLocalPosition(make(map[string]chan model.Position))
+	localDataServ := service.NewLocalPositions(localData)
 
-	// func positionServerStart(posServPort string, positionRPC pb.PositionServer) {
-	// 	lis, err := net.Listen("tcp", posServPort)
-	// 	if err != nil {
-	// 		log.Errorf("Critical error on listen port %v: %v", posServPort, err)
-	// 		return
-	// 	}
+	posData := repository.NewPosition(dbpool)
+	posDataServ := service.NewPosition(posData)
 
-	// 	rpcServer := grpc.NewServer()
+	opener := consumer.NewOpener(
+		localDataServ,
+		priceDataServ,
+		posDataServ,
+		openCh,
+	)
 
-	// 	pb.RegisterPositionServer(rpcServer, positionRPC)
+	go opener.Open(ctx)
+	go lis.Listen(ctx)
+	go posBridger.Close(ctx)
+	go priceServRPC.ReciveStream(ctx)
+	go priceBrdg.PriceBridge(ctx)
 
-	// 	err = rpcServer.Serve(lis)
-	// 	if err != nil {
-	// 		log.Errorf("Critical error on rpcServer start with port %v: %v", posServPort, err)
-	// 	}
-	// }
-
-	// func balanceServerStart(balanceServPort string, balanceRPC pb.BalanceServer) {
-	// 	lis, err := net.Listen("tcp", balanceServPort)
-	// 	if err != nil {
-	// 		log.Errorf("Critical error on listen port %v: %v", balanceServPort, err)
-	// 		return
-	// 	}
-
-	// 	rpcServer := grpc.NewServer()
-
-	// 	pb.RegisterBalanceServer(rpcServer, balanceRPC)
-
-	// err = rpcServer.Serve(lis)
-	//
-	//	if err != nil {
-	//		log.Errorf("Critical error on rpcServer start with port %v: %v", balanceServPort, err)
-	//	}
+	forever := make(chan struct{}) //destroy
+	<-forever
 }

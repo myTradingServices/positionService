@@ -25,6 +25,9 @@ func NewPriceServer(connecion *grpc.ClientConn, chPrice chan model.Price) *Price
 }
 
 func (p *PriceRPC) ReciveStream(ctx context.Context) {
+	log.Info("ReciveStream (price) rpc started")
+	defer log.Info("ReciveStream (price) rpc exited")
+
 	stream, err := p.client.DataStream(ctx, &pb.RequestDataStream{Start: true})
 	if err != nil {
 		log.Errorf("Error in DataStream: %v", err)
@@ -42,16 +45,21 @@ func (p *PriceRPC) ReciveStream(ctx context.Context) {
 			return
 		}
 
+		//log.Info("Send price to ch: ", p.chPrice)
 		p.chPrice <- model.Price{
 			Date:   recv.Date.AsTime(),
 			Bid:    decimal.New(recv.Bid.Value, recv.Bid.Exp),
 			Ask:    decimal.New(recv.Ask.Value, recv.Ask.Exp),
 			Symbol: recv.Symbol,
 		}
+		//log.Infof("Send price to ch: %v compleet", p.chPrice)
 	}
 }
 
 func (p *PriceRPC) ReciveLast(ctx context.Context, symb string) (model.Price, error) {
+	log.Info("ReciveLast (price) rpc started")
+	defer log.Info("ReciveLast (price) rpc exited")
+
 	recv, err := p.client.GetLastPrice(ctx, &pb.RequestGetLastPrice{
 		Symbol: symb,
 	})

@@ -34,6 +34,8 @@ func NewPositionServer(db PositionManipulator, price Reciver) pb.PositionServer 
 }
 
 func (p *positionServer) OpenPosition(ctx context.Context, recv *pb.RequestOpenPosition) (*emptypb.Empty, error) {
+	log.Info("OpenPosition rpc called")
+	defer log.Info("OpenPosition rpc call completed")
 
 	price, err := p.price.ReciveLast(ctx, recv.Symbol)
 	if err != nil {
@@ -67,6 +69,9 @@ func (p *positionServer) OpenPosition(ctx context.Context, recv *pb.RequestOpenP
 }
 
 func (p *positionServer) ClosePosition(ctx context.Context, recv *pb.RequestClosePosition) (*emptypb.Empty, error) {
+	log.Info("ClosePosition rpc called")
+	defer log.Info("ClosePosition rpc call completed")
+
 	price, err := p.price.ReciveLast(ctx, recv.Symbol)
 	if err != nil {
 		log.Error("GetLastPrice-rpc error while opening in position rpc, exiting stream: ", err)

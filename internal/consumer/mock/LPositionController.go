@@ -54,12 +54,12 @@ func (_c *LPositionController_Add_Call) RunAndReturn(run func(string, chan model
 	return _c
 }
 
-// Deleete provides a mock function with given fields: userID
-func (_m *LPositionController) Deleete(userID string) bool {
+// Delete provides a mock function with given fields: userID
+func (_m *LPositionController) Delete(userID string) bool {
 	ret := _m.Called(userID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Deleete")
+		panic("no return value specified for Delete")
 	}
 
 	var r0 bool
@@ -72,30 +72,30 @@ func (_m *LPositionController) Deleete(userID string) bool {
 	return r0
 }
 
-// LPositionController_Deleete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Deleete'
-type LPositionController_Deleete_Call struct {
+// LPositionController_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type LPositionController_Delete_Call struct {
 	*mock.Call
 }
 
-// Deleete is a helper method to define mock.On call
+// Delete is a helper method to define mock.On call
 //   - userID string
-func (_e *LPositionController_Expecter) Deleete(userID interface{}) *LPositionController_Deleete_Call {
-	return &LPositionController_Deleete_Call{Call: _e.mock.On("Deleete", userID)}
+func (_e *LPositionController_Expecter) Delete(userID interface{}) *LPositionController_Delete_Call {
+	return &LPositionController_Delete_Call{Call: _e.mock.On("Delete", userID)}
 }
 
-func (_c *LPositionController_Deleete_Call) Run(run func(userID string)) *LPositionController_Deleete_Call {
+func (_c *LPositionController_Delete_Call) Run(run func(userID string)) *LPositionController_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *LPositionController_Deleete_Call) Return(wasDeleted bool) *LPositionController_Deleete_Call {
+func (_c *LPositionController_Delete_Call) Return(wasDeleted bool) *LPositionController_Delete_Call {
 	_c.Call.Return(wasDeleted)
 	return _c
 }
 
-func (_c *LPositionController_Deleete_Call) RunAndReturn(run func(string) bool) *LPositionController_Deleete_Call {
+func (_c *LPositionController_Delete_Call) RunAndReturn(run func(string) bool) *LPositionController_Delete_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -6,8 +6,8 @@ import (
 )
 
 type environment struct {
-	PriceProviderURI  string `env:"PRICE_PROVIDER_URI" envDefault:"localhost:7073" validate:"uri"`
-	PpstgresURI       string `env:"POSTGRES_DB_URI" envDefault:"postgres://echopguser:pgpw4echo@localhost:6462/echodb?sslmode=disable" validate:"uri"` //NOTE: copied from chart service
+	PriceProviderURI  string `env:"PRICE_PROVIDER_URI" envDefault:"localhost:43223" validate:"uri"`
+	PostgresURI       string `env:"POSTGRES_DB_URI" envDefault:"postgres://user:password@localhost:40333/chart?sslmode=disable" validate:"uri"`
 	PositionServerURI string `env:"POSITION_SERVER_URI" envDefault:"localhost:7074" validate:"uri"`
 	BalanceServerURI  string `env:"BALANCE_SERVER_URI" envDefault:"localhost:7075" validate:"uri"`
 }
